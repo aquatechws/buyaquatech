@@ -121,9 +121,10 @@
                     </div>
 
                     <!-- SEARCH AND FILTER -->
-                    <div class="sticky top-[80px] z-20 bg-white pb-4">
+                    <div class="sticky top-[80px] z-20 bg-white pb-4 flex gap-3 items-center">
                         <input type="text" id="productSearch" onkeyup="filterProducts()" placeholder="Search catalog..." 
-                            class="w-full px-6 py-5 bg-sky-50 border border-sky-100 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500 transition-all font-semibold shadow-inner">
+                            class="flex-1 px-6 py-5 bg-sky-50 border border-sky-100 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500 transition-all font-semibold shadow-inner">
+                        <button type="submit" class="px-6 py-5 bg-sky-600 text-white font-black rounded-2xl shadow-lg hover:bg-sky-700 transition-all text-sm tracking-wide uppercase whitespace-nowrap active:scale-95">Send Quote Request</button>
                     </div>
 
                     <div id="catalog-order-summary" style="display:none;margin-bottom:24px;background:#f0f9ff;border:2px solid #38bdf8;border-radius:20px;padding:20px 24px;">
@@ -348,12 +349,15 @@
             if (product.cat !== currentCategory) {
                 currentCategory = product.cat;
                 const header = document.createElement('tr');
-                header.className = "bg-slate-50 md:table-row";
-                header.innerHTML = `<td colspan="3" class="px-8 py-3 text-[10px] font-black text-sky-600 uppercase tracking-widest">${currentCategory}</td>`;
+                header.className = "bg-slate-50 md:table-row cat-header cursor-pointer select-none";
+                header.dataset.cat = currentCategory;
+                header.innerHTML = `<td colspan="3" class="px-8 py-3 text-[10px] font-black text-sky-600 uppercase tracking-widest" style="display:flex;justify-content:space-between;align-items:center;"><span>${currentCategory}</span><span class="cat-toggle" style="font-size:12px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">&#9650;</span></td>`;
+                header.addEventListener('click', function() { toggleCategory(this.dataset.cat); });
                 tableBody.appendChild(header);
             }
             const row = document.createElement('tr');
             row.className = "product-row flex flex-col md:table-row p-6 md:p-0 transition-all hover:bg-slate-50 border-b border-slate-100 md:border-b-0";
+            row.dataset.cat = product.cat;
             row.innerHTML = `
                 <td class="px-0 md:px-8 py-0 md:py-6 text-sm">
                     <div class="font-bold text-slate-800">${product.name}</div>
@@ -370,8 +374,21 @@
 
         function filterProducts() {
             const query = document.getElementById('productSearch').value.toLowerCase();
-            document.querySelectorAll('.product-row').forEach(row => row.style.display = row.innerText.toLowerCase().includes(query) ? "" : "none");
-            document.querySelectorAll('tr.bg-slate-50').forEach(h => h.style.display = query.length > 0 ? "none" : "");
+            document.querySelectorAll('.product-row').forEach(function(row) {
+                const matchesSearch = !query || row.innerText.toLowerCase().includes(query);
+                const collapsed = row.dataset.collapsed === 'true';
+                row.style.display = (matchesSearch && !collapsed) ? '' : 'none';
+            });
+            document.querySelectorAll('.cat-header').forEach(function(h) { h.style.display = query.length > 0 ? "none" : ""; });
+        }
+        function toggleCategory(cat) {
+            const rows = document.querySelectorAll('.product-row[data-cat="' + cat + '"]');
+            const header = document.querySelector('.cat-header[data-cat="' + cat + '"]');
+            const toggle = header ? header.querySelector('.cat-toggle') : null;
+            const isCollapsed = rows[0] && rows[0].dataset.collapsed === 'true';
+            rows.forEach(function(r) { r.dataset.collapsed = isCollapsed ? 'false' : 'true'; });
+            if (toggle) toggle.innerHTML = isCollapsed ? '&#9650;' : '&#9660;';
+            filterProducts();
         }
 
         document.getElementById('quoteForm').addEventListener('submit', function(e) {
