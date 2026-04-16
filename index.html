@@ -320,7 +320,7 @@
                     <td class="price-cell px-0 md:px-8 py-4 md:py-6 text-sm text-right font-black text-green-700" data-code="${product.code}" data-box="${product.box || 1}" style="display:none;">&mdash;</td>
                     <td class="px-0 md:px-8 py-0 md:py-6 text-right">
                         <input type="number" data-name="${product.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" data-code="${product.code}" min="0" placeholder="0"
-                        class="qty-input w-24 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-right outline-none focus:ring-2 focus:ring-sky-500 font-bold transition-all">
+                        class="qty-input w-24 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-right outline-none focus:ring-2 focus:ring-sky-500 font-bold transition-all" step="1">
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -396,15 +396,7 @@
                     };
                 }
 
-                // 3. Quote Cart button → navigate parent to Get a Quote page
-                var cartBtn = iDoc.getElementById('btn-cart');
-                if (cartBtn) {
-                    cartBtn.addEventListener('click', function (e) {
-                        e.stopImmediatePropagation();
-                        if (typeof iWin.sendToSiteQuote === 'function') iWin.sendToSiteQuote();
-                        window.showPage('quote');
-                    }, true); // capture phase so it fires before the drawer opens
-                }
+                // 3. catalog.html handles btn-cart natively via window.parent.showPage
             } catch (err) {
                 console.warn('Catalog iframe patch failed:', err);
             }
@@ -453,8 +445,10 @@
             if (pageId === 'quote' && window._cachedPrices !== null) {
                 showPrices(window._cachedPrices);
             }
-            // Hide floating subtotal when leaving quote page
-            if (pageId !== 'quote') {
+            // Update floating subtotal when entering quote page, hide when leaving
+            if (pageId === 'quote') {
+                if (typeof updateSubtotal === 'function') updateSubtotal();
+            } else {
                 var sp = document.getElementById('subtotalPanel');
                 if (sp) sp.style.display = 'none';
             }
@@ -678,49 +672,79 @@
             var panel = document.getElementById('subtotalPanel');
             if (!panel) return;
             var quoteActive = document.getElementById('quote').classList.contains('active');
-            var hasPrices = window._cachedPrices && Object.keys(window._cachedPrices).length > 0;
-            if (!quoteActive || !hasPrices) { panel.style.display = 'none'; return; }
+            if (!quoteActive) { panel.style.display = 'none'; return; }
 
+            var hasPrices = window._cachedPrices && Object.keys(window._cachedPrices).length > 0;
             var total = 0;
+            var hasAnyPrice = false;
             var lines = [];
+
             document.querySelectorAll('.qty-input').forEach(function (input) {
-                var qty = parseFloat(input.value) || 0;
+                var qty = Math.max(0, Math.round(parseFloat(input.value) || 0));
                 if (qty <= 0) return;
                 var code = input.dataset.code;
+                var name = input.dataset.name;
                 var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
-                if (!cell || cell.dataset.pricePerBox === '') return;
-                var pricePerBox = parseFloat(cell.dataset.pricePerBox);
-                if (isNaN(pricePerBox)) return;
-                var lineTotal = qty * pricePerBox;
-                total += lineTotal;
-                lines.push({ name: input.dataset.name, code: code, qty: qty, lineTotal: lineTotal });
+                var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
+                var lineTotal = null;
+                if (hasPrices && cell && cell.dataset.pricePerBox !== '') {
+                    var pricePerBox = parseFloat(cell.dataset.pricePerBox);
+                    if (!isNaN(pricePerBox)) {
+                        lineTotal = qty * pricePerBox;
+                        total += lineTotal;
+                        hasAnyPrice = true;
+                    }
+                }
+                lines.push({ name: name, code: code, qty: qty, lineTotal: lineTotal, boxQty: boxQty });
             });
 
             if (lines.length === 0) { panel.style.display = 'none'; return; }
 
-            document.getElementById('subtotalItems').innerHTML = lines.map(function (l) {
+            var itemsHtml = lines.map(function (l) {
                 var htmlName = l.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f1f5f9;">' +
-                    '<div style="flex:1;min-width:0;font-size:11px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + htmlName + '">' + htmlName + '</div>' +
-                    '<input type="number" min="1" value="' + l.qty + '" ' +
+                var priceCell = l.lineTotal !== null
+                    ? '<span style="font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap;min-width:52px;text-align:right;">$' + l.lineTotal.toFixed(2) + '</span>'
+                    : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;min-width:52px;text-align:right;">—</span>';
+                return '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #f1f5f9;">' +
+                    '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-size:11px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + htmlName + '">' + htmlName + '</div>' +
+                    '<div style="font-size:9px;color:#94a3b8;">' + l.boxQty + ' pcs/box</div>' +
+                    '</div>' +
+                    '<input type="number" min="1" step="1" value="' + l.qty + '" ' +
                     'style="width:42px;text-align:center;font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;" ' +
                     'onchange="panelSetQty(\'' + l.code + '\',this.value)" ' +
                     'onfocus="this.select()">' +
                     '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">bx</span>' +
-                    '<span style="font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap;min-width:46px;text-align:right;">$' + l.lineTotal.toFixed(2) + '</span>' +
+                    priceCell +
                     '<button onclick="panelRemoveItem(\'' + l.code + '\')" title="Remove" ' +
                     'style="font-size:17px;line-height:1;color:#cbd5e1;background:none;border:none;cursor:pointer;padding:0 2px;flex-shrink:0;" ' +
-                    'onmouseover="this.style.color=\'#ef4444\'" onmouseout="this.style.color=\'#cbd5e1\'">&times;</button>' +
+                    'onmouseover="this.style.color=\'#ef4444\' " onmouseout="this.style.color=\'#cbd5e1\'">&times;</button>' +
                     '</div>';
             }).join('');
-            document.getElementById('subtotalAmount').textContent = '$' + total.toFixed(2);
+
+            document.getElementById('subtotalItems').innerHTML = itemsHtml;
+
+            var totalRow = document.getElementById('subtotalTotalRow');
+            if (totalRow) {
+                if (hasAnyPrice) {
+                    document.getElementById('subtotalAmount').textContent = '$' + total.toFixed(2);
+                    totalRow.style.display = 'flex';
+                } else {
+                    totalRow.style.display = 'none';
+                }
+            }
             panel.style.display = 'block';
+
+            // Also refresh the expanded overlay if open
+            if (document.getElementById('subtotalOverlay') && document.getElementById('subtotalOverlay').style.display !== 'none') {
+                refreshSubtotalOverlay(lines, total, hasAnyPrice);
+            }
         }
 
         function panelSetQty(code, rawVal) {
-            var qty = Math.max(1, parseInt(rawVal) || 1);
+            var qty = Math.max(1, Math.round(parseInt(rawVal) || 1));
             var input = document.querySelector('.qty-input[data-code="' + code + '"]');
-            if (input) input.value = qty;
+            if (input) { input.value = qty; }
             updateSubtotal();
         }
 
@@ -734,6 +758,163 @@
         document.getElementById('fullProductTable').addEventListener('input', function (e) {
             if (e.target.classList.contains('qty-input')) updateSubtotal();
         });
+
+        function handleSubtotalPanelClick(e) {
+            if (e.target.closest('button, input, a')) return;
+            openSubtotalOverlay();
+        }
+
+        function openSubtotalOverlay() {
+            var lines = [];
+            var total = 0;
+            var hasAnyPrice = false;
+            document.querySelectorAll('.qty-input').forEach(function (input) {
+                var qty = Math.max(0, Math.round(parseFloat(input.value) || 0));
+                if (qty <= 0) return;
+                var code = input.dataset.code;
+                var name = input.dataset.name;
+                var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
+                var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
+                var lineTotal = null;
+                if (window._cachedPrices && Object.keys(window._cachedPrices).length > 0 && cell && cell.dataset.pricePerBox !== '') {
+                    var ppb = parseFloat(cell.dataset.pricePerBox);
+                    if (!isNaN(ppb)) { lineTotal = qty * ppb; total += lineTotal; hasAnyPrice = true; }
+                }
+                lines.push({ name: name, code: code, qty: qty, lineTotal: lineTotal, boxQty: boxQty });
+            });
+            refreshSubtotalOverlay(lines, total, hasAnyPrice);
+            document.getElementById('subtotalOverlay').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSubtotalOverlay() {
+            document.getElementById('subtotalOverlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function refreshSubtotalOverlay(lines, total, hasAnyPrice) {
+            var list = document.getElementById('overlayItemsList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (lines.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:32px 0;font-size:14px;">No items selected.</p>';
+            } else {
+                lines.forEach(function (l) {
+                    var div = document.createElement('div');
+                    div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9;';
+                    var pieces = l.qty * l.boxQty;
+                    var htmlName = l.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    var priceHtml = l.lineTotal !== null
+                        ? '<span style="font-size:15px;font-weight:900;color:#0f172a;">$' + l.lineTotal.toFixed(2) + '</span>'
+                        : '<span style="font-size:13px;color:#94a3b8;">—</span>';
+                    var safeCode = l.code.replace(/"/g, '&quot;');
+                    div.innerHTML =
+                        '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-size:14px;font-weight:700;color:#1e293b;">' + htmlName + '</div>' +
+                            '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + l.qty + ' box' + (l.qty !== 1 ? 'es' : '') + ' × ' + l.boxQty + ' pcs/box = <strong>' + pieces + ' pcs</strong></div>' +
+                        '</div>' +
+                        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+                            '<div style="display:flex;align-items:center;gap:4px;">' +
+                                '<button class="ov-minus" data-code="' + safeCode + '" style="width:28px;height:28px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:18px;font-weight:700;color:#475569;line-height:1;">&#8722;</button>' +
+                                '<input type="number" class="ov-qty" data-code="' + safeCode + '" min="1" step="1" value="' + l.qty + '" style="width:50px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;">' +
+                                '<button class="ov-plus" data-code="' + safeCode + '" style="width:28px;height:28px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:18px;font-weight:700;color:#475569;line-height:1;">&#43;</button>' +
+                            '</div>' +
+                            '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;">bx</span>' +
+                            priceHtml +
+                            '<button class="ov-remove" data-code="' + safeCode + '" title="Remove" style="font-size:22px;line-height:1;color:#cbd5e1;background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0;">&times;</button>' +
+                        '</div>';
+
+                    div.querySelector('.ov-minus').addEventListener('click', function () { overlaySetQty(this.dataset.code, -1); });
+                    div.querySelector('.ov-plus').addEventListener('click',  function () { overlaySetQty(this.dataset.code, 1); });
+                    div.querySelector('.ov-qty').addEventListener('change',  function () { overlaySetQtyDirect(this.dataset.code, this.value); });
+                    div.querySelector('.ov-qty').addEventListener('focus',   function () { this.select(); });
+                    div.querySelector('.ov-remove').addEventListener('click', function () { panelRemoveItem(this.dataset.code); refreshOverlayFromInputs(); });
+                    list.appendChild(div);
+                });
+            }
+
+            var tr = document.getElementById('overlayTotalRow');
+            if (tr) { tr.style.display = hasAnyPrice ? 'flex' : 'none'; }
+            var ot = document.getElementById('overlayTotal');
+            if (ot && hasAnyPrice) ot.textContent = '$' + total.toFixed(2);
+        }
+
+
+        function overlaySetQty(code, delta) {
+            var input = document.querySelector('.qty-input[data-code="' + code + '"]');
+            if (!input) return;
+            var qty = Math.max(1, Math.round((parseFloat(input.value) || 0) + delta));
+            input.value = qty;
+            updateSubtotal();
+        }
+
+        function overlaySetQtyDirect(code, val) {
+            panelSetQty(code, val);
+        }
+
+        function refreshOverlayFromInputs() {
+            updateSubtotal();
+        }
+
+        function downloadQuotePDF() {
+            var lines = [];
+            document.querySelectorAll('.qty-input').forEach(function (input) {
+                var qty = Math.round(parseFloat(input.value) || 0);
+                if (qty > 0) {
+                    var code = input.dataset.code;
+                    var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
+                    var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
+                    var lineTotal = null;
+                    if (cell && cell.dataset.pricePerBox !== '') {
+                        var ppb = parseFloat(cell.dataset.pricePerBox);
+                        if (!isNaN(ppb)) lineTotal = qty * ppb;
+                    }
+                    lines.push({ name: input.dataset.name, code: code, qty: qty, boxQty: boxQty, lineTotal: lineTotal });
+                }
+            });
+            if (!lines.length) { alert('No items in quote.'); return; }
+            var hasPrice = lines.some(function(l){ return l.lineTotal !== null; });
+            var total = lines.reduce(function(s,l){ return s + (l.lineTotal || 0); }, 0);
+            var rows = lines.map(function(l) {
+                var priceCell = l.lineTotal !== null ? '$' + l.lineTotal.toFixed(2) : '&mdash;';
+                return '<tr style="border-bottom:1px solid #e2e8f0;">' +
+                    '<td style="padding:10px 14px;font-size:13px;font-weight:600;color:#1e293b;">' + l.name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</td>' +
+                    '<td style="padding:10px 14px;font-size:12px;color:#0369a1;font-weight:700;text-align:center;">' + l.code + '</td>' +
+                    '<td style="padding:10px 14px;font-size:13px;font-weight:700;text-align:center;">' + l.qty + ' box' + (l.qty!==1?'es':'') + '</td>' +
+                    '<td style="padding:10px 14px;font-size:12px;color:#64748b;text-align:center;">' + (l.qty * l.boxQty) + ' pcs</td>' +
+                    (hasPrice ? '<td style="padding:10px 14px;font-size:13px;font-weight:800;text-align:right;color:#0f172a;">' + priceCell + '</td>' : '') +
+                    '</tr>';
+            }).join('');
+            var dateStr = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+            var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Aquatech Quote</title>' +
+                '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui,sans-serif;color:#1e293b;padding:40px;}' +
+                'h1{font-size:26px;font-weight:900;color:#0f172a;margin-bottom:4px;}' +
+                '.sub{font-size:13px;color:#64748b;margin-bottom:32px;}' +
+                'table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08);}' +
+                'thead tr{background:#0f172a;}th{padding:10px 14px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;text-align:left;}' +
+                'tbody tr:nth-child(even){background:#f8fafc;}' +
+                '.total-row{margin-top:20px;display:flex;justify-content:flex-end;gap:16px;align-items:center;}' +
+                '.total-label{font-size:12px;font-weight:900;text-transform:uppercase;color:#64748b;letter-spacing:.08em;}' +
+                '.total-val{font-size:24px;font-weight:900;color:#0284c7;}' +
+                '.footer{margin-top:40px;font-size:11px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:16px;}' +
+                '@media print{body{padding:20px;}.no-print{display:none!important;}}' +
+                '</style></head><body>' +
+                '<h1>AQUATECH &mdash; Quote Request</h1>' +
+                '<p class="sub">Prepared: ' + dateStr + ' &nbsp;&bull;&nbsp; Prices subject to confirmation by Aquatech.</p>' +
+                '<table><thead><tr>' +
+                '<th>Description</th><th>Item Code</th><th>Qty (Boxes)</th><th>Total Pcs</th>' +
+                (hasPrice ? '<th style="text-align:right;">Est. Price</th>' : '') +
+                '</tr></thead><tbody>' + rows + '</tbody></table>';
+            if (hasPrice) {
+                html += '<div class="total-row"><span class="total-label">Estimated Total</span><span class="total-val">$' + total.toFixed(2) + '</span></div>';
+            }
+            html += '<div class="footer">AQUATECH Premium Wholesale Plumbing Supplies &bull; buyaquatech@gmail.com &bull; buyaquatech.com<br>This is a quote request only. Final pricing to be confirmed by Aquatech.</div>';
+            html += '<script>window.onload=function(){window.print();}<\/script></body></html>';
+            var w = window.open('', '_blank', 'width=900,height=700');
+            if (w) { w.document.write(html); w.document.close(); }
+            else { alert('Please allow popups for this site to download the PDF.'); }
+        }
 
         // Close modal on backdrop click
         document.getElementById('loginModal').addEventListener('click', function (e) {
@@ -826,29 +1007,77 @@
         </div>
     </div>
     <!-- FLOATING QUOTE SUBTOTAL -->
-    <div id="subtotalPanel" style="display:none;position:fixed;z-index:200;"
-        class="bottom-4 right-4 left-4 md:left-auto md:right-6 md:bottom-6 md:w-80 bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+    <div id="subtotalPanel" style="display:none;position:fixed;z-index:200;cursor:pointer;"
+        class="bottom-4 right-4 left-4 md:left-auto md:right-6 md:bottom-6 md:w-80 bg-white rounded-2xl md:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden"
+        onclick="handleSubtotalPanelClick(event)">
         <div class="bg-slate-900 px-5 py-3 flex items-center justify-between">
             <span class="text-xs font-black uppercase tracking-widest text-white">Quote Subtotal</span>
-            <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:9px;color:#94a3b8;font-weight:500;letter-spacing:.04em;">tap to expand</span>
+                <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+            </div>
         </div>
         <div class="px-5 pt-4 pb-1">
             <div id="subtotalItems" class="flex flex-col gap-2 mb-3 max-h-36 md:max-h-52 overflow-y-auto pr-1"></div>
         </div>
-        <div class="mx-5 border-t border-slate-100 pt-3 pb-3 flex justify-between items-center">
+        <div id="subtotalTotalRow" class="mx-5 border-t border-slate-100 pt-3 pb-3 flex justify-between items-center">
             <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</span>
             <span id="subtotalAmount" class="text-2xl font-black text-sky-600">$0.00</span>
         </div>
-        <div class="px-5 pb-4">
-            <button onclick="document.getElementById('quoteForm').requestSubmit()"
+        <div class="px-5 pb-4" style="cursor:default;">
+            <button onclick="document.getElementById('quoteForm').requestSubmit();event.stopPropagation();"
                 class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 active:scale-95 transition-all text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-md">
                 Send Quote Request
             </button>
+            <button onclick="downloadQuotePDF();event.stopPropagation();"
+                style="width:100%;margin-top:8px;padding:8px 0;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
+                onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#38bdf8';this.style.color='#0369a1';"
+                onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download Quote PDF
+            </button>
             <p class="text-[10px] text-slate-400 text-center mt-2">Box pricing &times; qty. Final quote to be confirmed
                 by Aquatech.</p>
+        </div>
+    </div>
+
+    <!-- FLOATING QUOTE SUBTOTAL EXPANDED OVERLAY -->
+    <div id="subtotalOverlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(2,6,23,0.72);backdrop-filter:blur(4px);" onclick="closeSubtotalOverlay()">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(96vw,680px);max-height:90vh;background:#fff;border-radius:24px;box-shadow:0 32px 80px rgba(0,0,0,.45);overflow:hidden;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+            <div style="background:#0f172a;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <svg width="18" height="18" fill="none" stroke="#38bdf8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span style="font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#fff;">Quote Summary</span>
+                </div>
+                <button onclick="closeSubtotalOverlay()" title="Minimize"
+                    style="background:#1e293b;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:20px;line-height:1;transition:background .15s;"
+                    onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">&times;</button>
+            </div>
+            <div style="overflow-y:auto;flex:1;padding:20px 24px;" id="overlayItemsList"></div>
+            <div id="overlayTotalRow" style="padding:16px 24px;border-top:1px solid #f1f5f9;display:none;justify-content:space-between;align-items:center;flex-shrink:0;background:#f8fafc;">
+                <span style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#64748b;">Estimated Total</span>
+                <span id="overlayTotal" style="font-size:28px;font-weight:900;color:#0284c7;">$0.00</span>
+            </div>
+            <div style="padding:16px 24px;display:flex;gap:10px;flex-shrink:0;background:#fff;border-top:1px solid #f1f5f9;">
+                <button onclick="document.getElementById('quoteForm').requestSubmit();closeSubtotalOverlay();"
+                    style="flex:1;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:background .15s;"
+                    onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'">Send Quote Request</button>
+                <button onclick="downloadQuotePDF();"
+                    style="padding:12px 16px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:14px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;"
+                    onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#38bdf8';this.style.color='#0369a1';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    PDF
+                </button>
+                <button onclick="closeSubtotalOverlay()"
+                    style="padding:12px 16px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:14px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;"
+                    onmouseover="this.style.background='#fee2e2';this.style.borderColor='#fca5a5';this.style.color='#dc2626';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                    Minimize
+                </button>
+            </div>
         </div>
     </div>
 </body>
