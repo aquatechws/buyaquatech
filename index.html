@@ -546,7 +546,7 @@
                 var pricePerBox = priceData[cell.dataset.code];
                 if (pricePerBox != null && pricePerBox !== '') {
                     var boxQty = parseFloat(cell.dataset.box) || 1;
-                    var pricePerPc = pricePerBox / boxQty;
+                    var pricePerPc = pricePerBox;
                     cell.dataset.pricePerBox = pricePerBox;
                     cell.textContent = '$' + pricePerPc.toFixed(2);
                 } else {
@@ -696,10 +696,10 @@
                 if (hasPrices && cell && cell.dataset.pricePerBox !== '') {
                     var pricePerBox = parseFloat(cell.dataset.pricePerBox);
                     if (!isNaN(pricePerBox)) {
-                        lineTotal = qty * pricePerBox;
+                        lineTotal = qty * boxQty * pricePerBox;
                         total += lineTotal;
                         hasAnyPrice = true;
-                        pricePerPiece = pricePerBox / boxQty;
+                        pricePerPiece = pricePerBox;
                     }
                 }
                 lines.push({ name: name, code: code, qty: qty, lineTotal: lineTotal, boxQty: boxQty, pricePerPiece: pricePerPiece });
@@ -820,7 +820,7 @@
                 var pricePerPiece = null;
                 if (window._cachedPrices && Object.keys(window._cachedPrices).length > 0 && cell && cell.dataset.pricePerBox !== '') {
                     var ppb = parseFloat(cell.dataset.pricePerBox);
-                    if (!isNaN(ppb)) { lineTotal = qty * ppb; total += lineTotal; hasAnyPrice = true; pricePerPiece = ppb / boxQty; }
+                    if (!isNaN(ppb)) { lineTotal = qty * boxQty * ppb; total += lineTotal; hasAnyPrice = true; pricePerPiece = ppb; }
                 }
                 lines.push({ name: name, code: code, qty: qty, lineTotal: lineTotal, boxQty: boxQty, pricePerPiece: pricePerPiece });
             });
@@ -938,7 +938,7 @@
                     var pricePerPiece = null;
                     if (cell && cell.dataset.pricePerBox !== '') {
                         var ppb = parseFloat(cell.dataset.pricePerBox);
-                        if (!isNaN(ppb)) { lineTotal = qty * ppb; pricePerPiece = ppb / boxQty; }
+                        if (!isNaN(ppb)) { lineTotal = qty * boxQty * ppb; pricePerPiece = ppb; }
                     }
                     lines.push({ name: input.dataset.name, code: code, qty: qty, boxQty: boxQty, lineTotal: lineTotal, pricePerPiece: pricePerPiece });
                 }
