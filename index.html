@@ -702,6 +702,7 @@
 
             var itemsHtml = lines.map(function (l) {
                 var htmlName = l.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                var safeCode = l.code.replace(/"/g, '&quot;');
                 var priceCell = l.lineTotal !== null
                     ? '<span style="font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap;min-width:52px;text-align:right;">$' + l.lineTotal.toFixed(2) + '</span>'
                     : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;min-width:52px;text-align:right;">—</span>';
@@ -710,11 +711,14 @@
                     '<div style="font-size:11px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + htmlName + '">' + htmlName + '</div>' +
                     '<div style="font-size:9px;color:#94a3b8;">' + l.boxQty + ' pcs/box</div>' +
                     '</div>' +
-                    '<input type="number" min="1" step="1" value="' + l.qty + '" ' +
-                    'style="width:42px;text-align:center;font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;" ' +
-                    'onchange="panelSetQty(\'' + l.code + '\',this.value)" ' +
+                    '<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;">' +
+                    '<input type="number" min="' + l.boxQty + '" step="' + l.boxQty + '" value="' + (l.qty * l.boxQty) + '" ' +
+                    'style="width:52px;text-align:center;font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;" ' +
+                    'onchange="panelSetPcs(\'' + l.code + '\',this.value)" ' +
                     'onfocus="this.select()">' +
-                    '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">bx</span>' +
+                    '<div class="pcs-err" data-code="' + safeCode + '" style="display:none;font-size:9px;color:#ef4444;text-align:center;line-height:1.1;max-width:52px;"></div>' +
+                    '</div>' +
+                    '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">pcs</span>' +
                     priceCell +
                     '<button onclick="panelRemoveItem(\'' + l.code + '\')" title="Remove" ' +
                     'style="font-size:17px;line-height:1;color:#cbd5e1;background:none;border:none;cursor:pointer;padding:0 2px;flex-shrink:0;" ' +
@@ -746,6 +750,45 @@
             var input = document.querySelector('.qty-input[data-code="' + code + '"]');
             if (input) { input.value = qty; }
             updateSubtotal();
+        }
+
+        function panelSetPcs(code, rawVal) {
+            var pcs = Math.round(parseFloat(rawVal) || 0);
+            var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
+            var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
+            var errEl = document.querySelector('.pcs-err[data-code="' + code + '"]');
+            var wrapDiv = errEl ? errEl.parentElement : null;
+            var panelInput = wrapDiv ? wrapDiv.querySelector('input') : null;
+            if (pcs > 0 && pcs % boxQty === 0) {
+                if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+                var boxes = pcs / boxQty;
+                var input = document.querySelector('.qty-input[data-code="' + code + '"]');
+                if (input) input.value = boxes;
+                updateSubtotal();
+            } else {
+                // Snap to nearest valid multiple
+                var nearest = Math.round(pcs / boxQty) * boxQty;
+                if (nearest < boxQty) nearest = boxQty;
+                // Update panel input to corrected value
+                if (panelInput) panelInput.value = nearest;
+                // Apply corrected value then redraw; re-query errEl after redraw
+                var boxes = nearest / boxQty;
+                var input = document.querySelector('.qty-input[data-code="' + code + '"]');
+                if (input) input.value = boxes;
+                updateSubtotal();
+                // Re-find elements in fresh DOM and show amber message
+                var freshErr = document.querySelector('.pcs-err[data-code="' + code + '"]');
+                if (freshErr) {
+                    freshErr.textContent = pcs + ' is not a multiple of ' + boxQty + ' — set to ' + nearest;
+                    freshErr.style.color = '#d97706';
+                    freshErr.style.display = 'block';
+                }
+                // Auto-dismiss after 3 seconds
+                setTimeout(function() {
+                    var el = document.querySelector('.pcs-err[data-code="' + code + '"]');
+                    if (el) { el.style.display = 'none'; el.textContent = ''; }
+                }, 3000);
+            }
         }
 
         function panelRemoveItem(code) {
@@ -911,7 +954,7 @@
             }
             html += '<div class="footer">AQUATECH Premium Wholesale Plumbing Supplies &bull; buyaquatech@gmail.com &bull; buyaquatech.com<br>This is a quote request only. Final pricing to be confirmed by Aquatech.</div>';
             html += '<script>window.onload=function(){window.print();}<\/script></body></html>';
-            var w = window.open('', '_blank', 'width=900,height=700');
+            var w = window.open('', '_blank', 'width=' + screen.width + ',height=' + screen.height + ',fullscreen=yes');
             if (w) { w.document.write(html); w.document.close(); }
             else { alert('Please allow popups for this site to download the PDF.'); }
         }
