@@ -646,7 +646,10 @@
             var errDiv = document.getElementById('authError');
             errDiv.style.display = 'none';
             _auth.signInWithEmailAndPassword(email, password).catch(function (err) {
-                errDiv.textContent = err.message;
+                var msg = err.code === 'auth/invalid-email'
+                    ? 'Please enter a valid email address.'
+                    : 'Incorrect username or password.';
+                errDiv.textContent = msg;
                 errDiv.style.display = 'block';
             });
         }
@@ -656,7 +659,17 @@
             var errDiv = document.getElementById('regError');
             errDiv.style.display = 'none';
             _auth.createUserWithEmailAndPassword(email, password).catch(function (err) {
-                errDiv.textContent = err.message;
+                var msg;
+                if (err.code === 'auth/email-already-in-use') {
+                    msg = 'An account with this email already exists.';
+                } else if (err.code === 'auth/invalid-email') {
+                    msg = 'Please enter a valid email address.';
+                } else if (err.code === 'auth/weak-password') {
+                    msg = 'Password must be at least 6 characters.';
+                } else {
+                    msg = err.message;
+                }
+                errDiv.textContent = msg;
                 errDiv.style.display = 'block';
             });
         }
@@ -703,24 +716,25 @@
                 var priceCell = l.lineTotal !== null
                     ? '<span style="font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap;min-width:52px;text-align:right;">$' + l.lineTotal.toFixed(2) + '</span>'
                     : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;min-width:52px;text-align:right;">—</span>';
-                return '<div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #f1f5f9;">' +
+                return '<div style="padding:5px 0;border-bottom:1px solid #f1f5f9;">' +
+                    '<div style="display:flex;align-items:center;gap:5px;">' +
                     '<div style="flex:1;min-width:0;">' +
                     '<div style="font-size:11px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + htmlName + '">' + htmlName + '</div>' +
                     '<div style="font-size:9px;color:#94a3b8;">' + l.boxQty + ' pcs/box</div>' +
                     '</div>' +
-                    '<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;">' +
                     '<input type="number" min="' + l.boxQty + '" step="' + l.boxQty + '" value="' + (l.qty * l.boxQty) + '" ' +
-                    'style="width:52px;text-align:center;font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;" ' +
+                    'style="width:52px;text-align:center;font-size:12px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:3px 2px;outline:none;flex-shrink:0;-moz-appearance:textfield;appearance:textfield;" ' +
                     'onchange="panelSetPcs(\'' + l.code + '\',this.value)" ' +
+                    'onkeydown="if(event.key===\'Enter\'){event.preventDefault();panelSetPcs(\'' + l.code + '\',this.value);}" ' +
                     'onfocus="this.select()">' +
-                    '<div class="pcs-err" data-code="' + safeCode + '" style="display:none;font-size:9px;color:#ef4444;text-align:center;line-height:1.1;max-width:52px;"></div>' +
-                    '</div>' +
-                    '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">pcs</span>' +
+                    '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">pcs</span>' +
                     pricePerPieceHtml +
                     priceCell +
                     '<button onclick="panelRemoveItem(\'' + l.code + '\')" title="Remove" ' +
                     'style="font-size:17px;line-height:1;color:#cbd5e1;background:none;border:none;cursor:pointer;padding:0 2px;flex-shrink:0;" ' +
                     'onmouseover="this.style.color=\'#ef4444\' " onmouseout="this.style.color=\'#cbd5e1\'">&times;</button>' +
+                    '</div>' +
+                    '<div class="pcs-err" data-code="' + safeCode + '" style="display:none;font-size:9px;font-weight:700;color:#ef4444;line-height:1.4;padding-top:3px;text-align:center;"></div>' +
                     '</div>';
             }).join('');
 
@@ -754,38 +768,24 @@
             var pcs = Math.round(parseFloat(rawVal) || 0);
             var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
             var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
-            var errEl = document.querySelector('.pcs-err[data-code="' + code + '"]');
-            var wrapDiv = errEl ? errEl.parentElement : null;
-            var panelInput = wrapDiv ? wrapDiv.querySelector('input') : null;
+            var mainInput = document.querySelector('.qty-input[data-code="' + code + '"]');
             if (pcs > 0 && pcs % boxQty === 0) {
-                if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-                var boxes = pcs / boxQty;
-                var input = document.querySelector('.qty-input[data-code="' + code + '"]');
-                if (input) input.value = boxes;
+                if (mainInput) mainInput.value = pcs / boxQty;
                 updateSubtotal();
             } else {
-                // Snap to nearest valid multiple
                 var nearest = Math.round(pcs / boxQty) * boxQty;
                 if (nearest < boxQty) nearest = boxQty;
-                // Update panel input to corrected value
-                if (panelInput) panelInput.value = nearest;
-                // Apply corrected value then redraw; re-query errEl after redraw
-                var boxes = nearest / boxQty;
-                var input = document.querySelector('.qty-input[data-code="' + code + '"]');
-                if (input) input.value = boxes;
+                if (mainInput) mainInput.value = nearest / boxQty;
                 updateSubtotal();
-                // Re-find elements in fresh DOM and show amber message
                 var freshErr = document.querySelector('.pcs-err[data-code="' + code + '"]');
                 if (freshErr) {
-                    freshErr.textContent = pcs + ' is not a multiple of ' + boxQty + ' — set to ' + nearest;
-                    freshErr.style.color = '#d97706';
+                    freshErr.textContent = pcs + ' pcs is not a full box — must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
                     freshErr.style.display = 'block';
                 }
-                // Auto-dismiss after 3 seconds
-                setTimeout(function() {
+                setTimeout(function () {
                     var el = document.querySelector('.pcs-err[data-code="' + code + '"]');
                     if (el) { el.style.display = 'none'; el.textContent = ''; }
-                }, 3000);
+                }, 4000);
             }
         }
 
@@ -844,7 +844,7 @@
             } else {
                 lines.forEach(function (l) {
                     var div = document.createElement('div');
-                    div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9;';
+                    div.style.cssText = 'padding:12px 0;border-bottom:1px solid #f1f5f9;';
                     var pieces = l.qty * l.boxQty;
                     var htmlName = l.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                     var pricePerPieceHtml = l.pricePerPiece !== null
@@ -855,25 +855,27 @@
                         : '<span style="font-size:13px;color:#94a3b8;">—</span>';
                     var safeCode = l.code.replace(/"/g, '&quot;');
                     div.innerHTML =
-                        '<div style="flex:1;min-width:0;">' +
-                            '<div style="font-size:14px;font-weight:700;color:#1e293b;">' + htmlName + '</div>' +
-                            '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + l.qty + ' box' + (l.qty !== 1 ? 'es' : '') + ' × ' + l.boxQty + ' pcs/box = <strong>' + pieces + ' pcs</strong></div>' +
-                        '</div>' +
-                        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
-                            '<div style="display:flex;align-items:center;gap:4px;">' +
+                        '<div style="display:flex;align-items:center;gap:8px;">' +
+                            '<div style="flex:1;min-width:0;">' +
+                                '<div style="font-size:14px;font-weight:700;color:#1e293b;">' + htmlName + '</div>' +
+                                '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + l.qty + ' box' + (l.qty !== 1 ? 'es' : '') + ' &times; ' + l.boxQty + ' pcs/box</div>' +
+                            '</div>' +
+                            '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
                                 '<button class="ov-minus" data-code="' + safeCode + '" style="width:28px;height:28px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:18px;font-weight:700;color:#475569;line-height:1;">&#8722;</button>' +
-                                '<input type="number" class="ov-qty" data-code="' + safeCode + '" min="1" step="1" value="' + l.qty + '" style="width:50px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;">' +
+                                '<input type="number" class="ov-qty" data-code="' + safeCode + '" min="' + l.boxQty + '" step="' + l.boxQty + '" value="' + pieces + '" style="width:58px;text-align:center;font-size:14px;font-weight:700;border:1.5px solid #e2e8f0;border-radius:8px;padding:4px 2px;outline:none;-moz-appearance:textfield;appearance:textfield;">' +
                                 '<button class="ov-plus" data-code="' + safeCode + '" style="width:28px;height:28px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:7px;cursor:pointer;font-size:18px;font-weight:700;color:#475569;line-height:1;">&#43;</button>' +
                             '</div>' +
-                            '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;">bx</span>' +
+                            '<span style="font-size:11px;color:#94a3b8;white-space:nowrap;flex-shrink:0;">pcs</span>' +
                             pricePerPieceHtml +
                             priceHtml +
                             '<button class="ov-remove" data-code="' + safeCode + '" title="Remove" style="font-size:22px;line-height:1;color:#cbd5e1;background:none;border:none;cursor:pointer;padding:0 4px;flex-shrink:0;">&times;</button>' +
-                        '</div>';
+                        '</div>' +
+                        '<div class="ov-pcs-err" data-code="' + safeCode + '" style="display:none;font-size:10px;font-weight:700;color:#ef4444;line-height:1.4;padding-top:4px;text-align:center;"></div>';
 
-                    div.querySelector('.ov-minus').addEventListener('click', function () { overlaySetQty(this.dataset.code, -1); });
-                    div.querySelector('.ov-plus').addEventListener('click',  function () { overlaySetQty(this.dataset.code, 1); });
-                    div.querySelector('.ov-qty').addEventListener('change',  function () { overlaySetQtyDirect(this.dataset.code, this.value); });
+                    div.querySelector('.ov-minus').addEventListener('click', function () { overlayAdjPcs(this.dataset.code, -1); });
+                    div.querySelector('.ov-plus').addEventListener('click',  function () { overlayAdjPcs(this.dataset.code, 1); });
+                    div.querySelector('.ov-qty').addEventListener('change',  function () { overlaySetPcs(this.dataset.code, this.value); });
+                    div.querySelector('.ov-qty').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); overlaySetPcs(this.dataset.code, this.value); } });
                     div.querySelector('.ov-qty').addEventListener('focus',   function () { this.select(); });
                     div.querySelector('.ov-remove').addEventListener('click', function () { panelRemoveItem(this.dataset.code); refreshOverlayFromInputs(); });
                     list.appendChild(div);
@@ -887,16 +889,37 @@
         }
 
 
-        function overlaySetQty(code, delta) {
-            var input = document.querySelector('.qty-input[data-code="' + code + '"]');
-            if (!input) return;
-            var qty = Math.max(1, Math.round((parseFloat(input.value) || 0) + delta));
-            input.value = qty;
+        function overlayAdjPcs(code, direction) {
+            var mainInput = document.querySelector('.qty-input[data-code="' + code + '"]');
+            if (!mainInput) return;
+            var qty = Math.max(1, Math.round((parseFloat(mainInput.value) || 0) + direction));
+            mainInput.value = qty;
             updateSubtotal();
         }
 
-        function overlaySetQtyDirect(code, val) {
-            panelSetQty(code, val);
+        function overlaySetPcs(code, rawVal) {
+            var pcs = Math.round(parseFloat(rawVal) || 0);
+            var cell = document.querySelector('.price-cell[data-code="' + code + '"]');
+            var boxQty = cell ? (parseFloat(cell.dataset.box) || 1) : 1;
+            var mainInput = document.querySelector('.qty-input[data-code="' + code + '"]');
+            if (pcs > 0 && pcs % boxQty === 0) {
+                if (mainInput) mainInput.value = pcs / boxQty;
+                updateSubtotal();
+            } else {
+                var nearest = Math.round(pcs / boxQty) * boxQty;
+                if (nearest < boxQty) nearest = boxQty;
+                if (mainInput) mainInput.value = nearest / boxQty;
+                updateSubtotal();
+                var freshErr = document.querySelector('.ov-pcs-err[data-code="' + code + '"]');
+                if (freshErr) {
+                    freshErr.textContent = pcs + ' pcs is not a full box — must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
+                    freshErr.style.display = 'block';
+                }
+                setTimeout(function () {
+                    var el = document.querySelector('.ov-pcs-err[data-code="' + code + '"]');
+                    if (el) { el.style.display = 'none'; el.textContent = ''; }
+                }, 4000);
+            }
         }
 
         function refreshOverlayFromInputs() {
@@ -1003,9 +1026,11 @@
                 <h2 class="text-2xl font-black text-slate-900 mb-1">Welcome Back</h2>
                 <p class="text-slate-400 text-sm mb-6">Login to view your custom pricing.</p>
                 <input id="authEmail" type="email" placeholder="Email address"
-                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm">
+                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm"
+                    onkeydown="if(event.key==='Enter') doLogin();">
                 <input id="authPassword" type="password" placeholder="Password"
-                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm">
+                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm"
+                    onkeydown="if(event.key==='Enter') doLogin();">
                 <div id="authError" class="text-red-500 text-xs font-bold mb-3 px-1" style="display:none;"></div>
                 <button onclick="doLogin()"
                     class="w-full py-3 bg-sky-600 text-white font-black rounded-xl hover:bg-sky-700 transition text-sm tracking-wide uppercase mb-4">Login</button>
@@ -1043,9 +1068,11 @@
                 <h2 class="text-2xl font-black text-slate-900 mb-1">Create Account</h2>
                 <p class="text-slate-400 text-sm mb-6">Register to access your wholesale pricing.</p>
                 <input id="regEmail" type="email" placeholder="Email address"
-                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm">
+                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm"
+                    onkeydown="if(event.key==='Enter') doRegister();">
                 <input id="regPassword" type="password" placeholder="Password (min 6 characters)"
-                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm">
+                    class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm"
+                    onkeydown="if(event.key==='Enter') doRegister();">
                 <div id="regError" class="text-red-500 text-xs font-bold mb-3 px-1" style="display:none;"></div>
                 <button onclick="doRegister()"
                     class="w-full py-3 bg-sky-600 text-white font-black rounded-xl hover:bg-sky-700 transition text-sm tracking-wide uppercase mb-4">Create
