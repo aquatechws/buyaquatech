@@ -409,12 +409,13 @@
             var items = e.data.items;
             window._allCartItems = items;
             // Stay on current page — user keeps browsing; quote form updates silently
-            document.querySelectorAll('.qty-input').forEach(function (inp) { inp.value = ''; });
+            (window._catalogSourcedInputs || []).forEach(function (inp) { inp.value = ''; });
+            window._catalogSourcedInputs = [];
             items.forEach(function (item) {
                 document.querySelectorAll('.qty-input').forEach(function (inp) {
                     var nameMatch = (inp.dataset.name || '').toLowerCase() === item.name.toLowerCase();
                     var skuMatch = item.sku && inp.dataset.code && inp.dataset.code.toLowerCase() === item.sku.toLowerCase();
-                    if (nameMatch || skuMatch) inp.value = item.qty;
+                    if (nameMatch || skuMatch) { inp.value = item.qty; window._catalogSourcedInputs.push(inp); }
                 });
             });
             // Show visible summary panel
