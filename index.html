@@ -47,6 +47,160 @@
             box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
         }
     </style>
+
+    <!-- ========================================================================
+         AUTOMATIC DARK MODE: activates when the visitor's device is set to dark.
+         Remaps the site's light Tailwind tokens + key inline-styled widgets.
+         (Uses !important so it overrides Tailwind utilities and inline styles.)
+         ======================================================================== -->
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root { color-scheme: dark; }
+            body { background-color: #0a1018 !important; color: #dbe4f0; }
+
+            /* ---- Surfaces ---- */
+            .bg-white { background-color: #0f1828 !important; }
+            .bg-slate-50 { background-color: #0a1018 !important; }
+            .bg-sky-50 { background-color: #0d2336 !important; }
+            .bg-sky-100 { background-color: #0c2c45 !important; }
+            .bg-white\/95 { background-color: rgba(12, 19, 31, 0.90) !important; }
+
+            /* ---- Text ---- */
+            .text-slate-900 { color: #f1f5f9 !important; }
+            .text-slate-800 { color: #e9eff7 !important; }
+            .text-slate-700 { color: #cbd5e1 !important; }
+            .text-slate-600 { color: #aeb9cb !important; }
+            .text-slate-500 { color: #93a1b5 !important; }
+            .text-slate-400 { color: #7e8ba1 !important; }
+            .text-sky-700 { color: #7dd3fc !important; }
+            .text-green-700, .text-green-600 { color: #4ade80 !important; }
+            .text-red-500 { color: #f87171 !important; }
+
+            /* ---- Borders / rings / dividers ---- */
+            .border-slate-200 { border-color: #22304a !important; }
+            .border-slate-100 { border-color: #1b2740 !important; }
+            .border-sky-200 { border-color: #1e3a52 !important; }
+            .border-cyan-100 { border-color: #163448 !important; }
+            .ring-slate-100 { --tw-ring-color: #1b2740 !important; }
+            .ring-sky-100 { --tw-ring-color: #0c3a5a !important; }
+            .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1b2740 !important; }
+
+            /* ---- Home hero: solid dark wash instead of the light gradient ---- */
+            #home section.bg-gradient-to-b { background: #0a1018 !important; }
+            #home section.bg-gradient-to-b p { color: #cbd5e1 !important; }
+            #home .aqua-card:hover { border-color: #1e4a6b !important; }
+
+            /* ---- Form controls ---- */
+            input, textarea, select {
+                background-color: #0c1626 !important;
+                color: #e6edf6 !important;
+                border-color: #22304a !important;
+            }
+            input::placeholder, textarea::placeholder { color: #5b6b82 !important; }
+
+            /* ---- Floating subtotal panel + expanded overlay (inline-styled) ---- */
+            #subtotalItems [style*="#1e293b"], #subtotalItems [style*="#0f172a"],
+            #overlayItemsList [style*="#1e293b"], #overlayItemsList [style*="#0f172a"] { color: #e6edf6 !important; }
+            #subtotalItems [style*="#94a3b8"], #subtotalItems [style*="#64748b"],
+            #overlayItemsList [style*="#94a3b8"], #overlayItemsList [style*="#64748b"] { color: #8a97ab !important; }
+            #subtotalItems [style*="#f1f5f9"], #overlayItemsList [style*="#f1f5f9"] { border-color: #22304a !important; }
+            #overlayItemsList [style*="background:#f1f5f9"] { background: #1b2740 !important; color: #cbd5e1 !important; }
+            #subtotalOverlay > div { background-color: #0f1828 !important; }
+        }
+    </style>
+
+    <!-- ========================================================================
+         BUTTON HOVER = INVERT (background and text swap places on hover)
+         ======================================================================== -->
+    <style>
+        /* Primary solid (sky) buttons invert to white fill + sky text */
+        button.bg-sky-600:hover, a.bg-sky-600:hover {
+            background-color: #ffffff !important;
+            color: #0284c7 !important;
+            box-shadow: inset 0 0 0 2px #0284c7, 0 8px 24px -8px rgba(2, 132, 199, .45) !important;
+        }
+        button.bg-sky-600:hover svg, a.bg-sky-600:hover svg { color: #0284c7 !important; }
+
+        /* Outline / light buttons invert to dark fill + white text */
+        button.bg-white:hover, a.bg-white:hover {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
+        }
+        button.bg-white:hover svg, a.bg-white:hover svg { color: #ffffff !important; }
+
+        /* Nav login / logout (transparent, bordered) invert to dark fill + white text */
+        #nav-auth-area button:hover {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
+        }
+
+        /* In dark mode the light buttons already sit dark, so invert the other way */
+        @media (prefers-color-scheme: dark) {
+            button.bg-white:hover, a.bg-white:hover {
+                background-color: #ffffff !important;
+                color: #0f172a !important;
+                border-color: #ffffff !important;
+            }
+            button.bg-white:hover svg, a.bg-white:hover svg { color: #0f172a !important; }
+            #nav-auth-area button:hover {
+                background-color: #ffffff !important;
+                color: #0f172a !important;
+                border-color: #ffffff !important;
+            }
+        }
+    </style>
+
+    <!-- ========================================================================
+         DEPTH & TEXTURE PASS — film grain on major sections + layered shadows
+         ======================================================================== -->
+    <style>
+        /* Subtle film-grain texture overlay */
+        .aqua-grain { position: relative; }
+        .aqua-grain::before {
+            content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 180px 180px; opacity: .05; mix-blend-mode: overlay;
+        }
+        .aqua-grain > * { position: relative; z-index: 1; }
+
+        /* Sticky nav: soft drop shadow for separation */
+        nav.sticky { box-shadow: 0 8px 30px -16px rgba(2, 6, 23, .35); }
+
+        /* Feature cards: layered shadows + deeper lift */
+        #home .aqua-card { box-shadow: 0 1px 2px rgba(2, 6, 23, .05), 0 18px 36px -16px rgba(2, 132, 199, .20); }
+        #home .aqua-card:hover { box-shadow: 0 30px 60px -18px rgba(2, 132, 199, .36), 0 8px 18px -8px rgba(2, 6, 23, .22); }
+        /* Feature icon tiles: glossy depth */
+        #home .aqua-card > div:first-child { box-shadow: 0 12px 24px -8px rgba(2, 132, 199, .55), inset 0 1px 0 rgba(255, 255, 255, .30); }
+
+        /* Catalog viewer frame: stronger floating shadow */
+        #products .rounded-\[2rem\] { box-shadow: 0 40px 80px -24px rgba(2, 6, 23, .30), 0 12px 28px -12px rgba(2, 6, 23, .16); }
+
+        /* Floating quote panel: deeper shadow */
+        #subtotalPanel { box-shadow: 0 30px 60px -18px rgba(2, 6, 23, .45), 0 8px 20px -10px rgba(2, 6, 23, .30) !important; }
+
+        @media (prefers-color-scheme: dark) {
+            nav.sticky { box-shadow: 0 10px 34px -16px rgba(0, 0, 0, .7); }
+            #home .aqua-card { box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 20px 40px -18px rgba(0, 0, 0, .6); }
+            .aqua-grain::before { opacity: .07; mix-blend-mode: soft-light; }
+        }
+    </style>
+
+    <!-- ========================================================================
+         HIGHLIGHT / SELECTION READABILITY
+         ======================================================================== -->
+    <style>
+        /* Text selection stays readable in both themes */
+        ::selection { background: #0ea5e9; color: #ffffff; }
+        ::-moz-selection { background: #0ea5e9; color: #ffffff; }
+
+        @media (prefers-color-scheme: dark) {
+            /* Row hover highlight must be DARK so the light text stays readable
+               (Tailwind's hover:bg-slate-50 would otherwise paint light-on-light) */
+            .product-row:hover { background-color: #16202e !important; }
+        }
+    </style>
     <!-- Firebase SDK (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -59,23 +213,42 @@
     <nav class="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 h-20">
         <div class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center">
             <div class="flex items-center h-full cursor-pointer" onclick="showPage('home')">
-                <!-- SVG LOGO (Dark Text Version) -->
-                <svg viewBox="0 0 320 80" class="h-10 w-auto">
-                    <circle cx="35" cy="30" r="28" fill="#50C3E2" fill-opacity="0.85" />
-                    <circle cx="65" cy="30" r="28" fill="#006DAE" fill-opacity="0.85" />
-                    <circle cx="50" cy="30" r="14" fill="white" />
-                    <text x="105" y="48" font-family="Plus Jakarta Sans, sans-serif" font-weight="800"
-                        font-style="italic" font-size="34" letter-spacing="-1.5" fill="black">AQUATECH</text>
+                <!-- SVG LOGO (clean two-tone circular ring; text adapts to dark mode) -->
+                <!-- Compact ring-only mark for very small (phone) screens -->
+                <svg viewBox="0 0 80 80" class="hidden max-[479px]:block h-9 w-auto text-slate-900">
+                    <defs>
+                        <mask id="navRingMaskSm">
+                            <circle cx="40" cy="40" r="36" fill="#fff" />
+                            <circle cx="40" cy="40" r="16" fill="#000" />
+                        </mask>
+                    </defs>
+                    <g mask="url(#navRingMaskSm)">
+                        <rect x="0" y="0" width="80" height="80" fill="#54C2E6" />
+                        <circle cx="51" cy="48" r="32" fill="#1C77BD" />
+                    </g>
+                </svg>
+                <svg viewBox="0 0 330 80" class="h-10 w-auto text-slate-900 max-[479px]:hidden">
+                    <defs>
+                        <mask id="navRingMask">
+                            <circle cx="40" cy="40" r="36" fill="#fff" />
+                            <circle cx="40" cy="40" r="16" fill="#000" />
+                        </mask>
+                    </defs>
+                    <g mask="url(#navRingMask)">
+                        <rect x="0" y="0" width="80" height="80" fill="#54C2E6" />
+                        <circle cx="51" cy="48" r="32" fill="#1C77BD" />
+                    </g>
+                    <text x="96" y="52" font-family="Plus Jakarta Sans, sans-serif" font-weight="800"
+                        font-style="italic" font-size="34" letter-spacing="-1.5" fill="currentColor">AQUATECH</text>
                 </svg>
             </div>
 
-            <div class="hidden md:flex space-x-8">
+            <div class="flex items-center space-x-3 sm:space-x-6 md:space-x-8">
                 <button onclick="showPage('home')"
-                    class="nav-link text-sm font-bold tracking-tight py-2 active">Home</button>
+                    class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap active">Home</button>
                 <button onclick="showPage('products')"
-                    class="nav-link text-sm font-bold tracking-tight py-2">Products</button>
-                <button onclick="showPage('quote')" class="nav-link text-sm font-bold tracking-tight py-2">Get a
-                    Quote</button>
+                    class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Products</button>
+                <button onclick="showPage('quote')" class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Get a Quote</button>
             </div>
 
             <div class="flex items-center gap-3">
@@ -84,43 +257,139 @@
                         class="text-sm font-bold text-slate-500 hover:text-sky-600 transition-colors px-3 py-2 border border-slate-200 rounded-xl">Login</button>
                 </div>
                 <button onclick="showPage('quote')"
-                    class="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-sky-700 transition-all shadow-md active:scale-95">Quote</button>
+                    class="bg-sky-600 text-white px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-widest hover:bg-sky-700 transition-all shadow-md active:scale-95 max-[479px]:hidden">Quote</button>
             </div>
         </div>
     </nav>
 
     <!-- HOME PAGE -->
     <div id="home" class="page active">
-        <section class="relative bg-white pt-12 md:pt-32 pb-24 overflow-hidden">
-            <div class="max-w-4xl mx-auto px-4 text-center">
-                <span
-                    class="inline-block py-1 px-3 rounded-full bg-sky-100 text-sky-700 text-xs font-bold uppercase tracking-widest mb-6">Wholesale
-                    Distributor</span>
-                <h1 class="text-5xl md:text-8xl font-extrabold text-slate-900 leading-tight">
-                    Best Products. <br><span class="text-sky-600 italic">Best Value.</span>
-                </h1>
-                <p class="mt-8 text-xl md:text-2xl text-slate-500 leading-relaxed max-w-2xl mx-auto">
-                    Aquatech is your premier wholesale partner, delivering professional-grade plumbing and heating
-                    supplies with unmatched speed and transparency.
-                </p>
-                <div class="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
-                    <button onclick="showPage('quote')"
-                        class="px-12 py-6 bg-slate-900 text-white font-bold rounded-2xl shadow-xl hover:-translate-y-1 transition-all text-lg">Request
-                        a Quote</button>
-                    <button onclick="showPage('products')"
-                        class="px-12 py-6 bg-white border border-slate-200 text-slate-900 font-bold rounded-2xl hover:bg-slate-50 transition-all text-lg">View
-                        Full Catalog</button>
+        <!-- Home-only styles (scoped via .aqua- prefixes) -->
+        <style>
+            @keyframes aquaFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+            @keyframes aquaSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+            @keyframes aquaSpinRev { from{transform:rotate(360deg)} to{transform:rotate(0deg)} }
+            .aqua-float { animation: aquaFloat 6s ease-in-out infinite; }
+            .aqua-spin-slow { animation: aquaSpin 38s linear infinite; }
+            .aqua-spin-rev { animation: aquaSpinRev 26s linear infinite; }
+            .aqua-blob { filter: blur(64px); }
+            .aqua-grad-text { background: linear-gradient(115deg,#0ea5e9 0%,#06b6d4 50%,#0369a1 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+            .aqua-card { transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease; }
+            .aqua-card:hover { transform: translateY(-6px); box-shadow: 0 24px 50px -16px rgba(2,132,199,.30); border-color: #bae6fd; }
+            @media (prefers-reduced-motion: reduce) {
+                .aqua-float, .aqua-spin-slow, .aqua-spin-rev { animation: none; }
+            }
+        </style>
+
+        <!-- ============================ HERO ============================ -->
+        <section class="aqua-grain relative overflow-hidden bg-gradient-to-b from-sky-50 via-white to-white">
+            <!-- decorative blobs -->
+            <div class="aqua-blob absolute -top-28 -left-28 w-[26rem] h-[26rem] rounded-full bg-sky-200/50 pointer-events-none"></div>
+            <div class="aqua-blob absolute top-24 -right-28 w-[26rem] h-[26rem] rounded-full bg-cyan-200/40 pointer-events-none"></div>
+
+            <div class="relative max-w-7xl mx-auto px-6 pt-14 md:pt-24 pb-20 md:pb-32 grid md:grid-cols-2 gap-12 md:gap-8 items-center">
+                <!-- copy -->
+                <div class="text-center md:text-left">
+                    <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.05] tracking-tight">
+                        Best Products.<br><span class="aqua-grad-text italic">Best Value.</span>
+                    </h1>
+                    <p class="mt-6 text-lg md:text-xl text-slate-500 leading-relaxed max-w-xl mx-auto md:mx-0">
+                        Your wholesale source for professional-grade plumbing &amp; heating supplies
+                        at fully transparent pricing.
+                    </p>
+                    <div class="mt-9 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                        <button onclick="showPage('quote')"
+                            class="group px-8 py-4 bg-sky-600 text-white font-bold rounded-2xl shadow-lg shadow-sky-600/25 hover:bg-sky-700 hover:-translate-y-0.5 transition-all text-base flex items-center justify-center gap-2">
+                            Request a Quote
+                            <svg class="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        </button>
+                        <button onclick="showPage('products')"
+                            class="px-8 py-4 bg-white border border-slate-200 text-slate-900 font-bold rounded-2xl hover:bg-slate-50 hover:-translate-y-0.5 transition-all text-base">
+                            View Full Catalog
+                        </button>
+                    </div>
+                </div>
+
+                <!-- hero graphic: AQUATECH ring -->
+                <div class="relative flex justify-center md:justify-end">
+                    <div class="relative w-72 h-72 md:w-[26rem] md:h-[26rem]">
+                        <div class="aqua-spin-slow absolute inset-0 rounded-full border-2 border-dashed border-sky-200"></div>
+                        <div class="aqua-spin-rev absolute inset-10 rounded-full border border-cyan-100"></div>
+                        <svg class="aqua-float absolute inset-0 m-auto w-3/5 h-3/5 drop-shadow-2xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="aquaLight" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#69CFEC" /><stop offset="1" stop-color="#45BEE3" />
+                                </linearGradient>
+                                <linearGradient id="aquaDark" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0" stop-color="#2A8BCC" /><stop offset="1" stop-color="#155FA0" />
+                                </linearGradient>
+                                <mask id="aquaHeroRing">
+                                    <circle cx="50" cy="50" r="45" fill="#fff" />
+                                    <circle cx="50" cy="50" r="20" fill="#000" />
+                                </mask>
+                            </defs>
+                            <g mask="url(#aquaHeroRing)">
+                                <rect width="100" height="100" fill="url(#aquaLight)" />
+                                <circle cx="64" cy="60" r="40" fill="url(#aquaDark)" />
+                            </g>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <div class="bg-slate-900 py-12">
-            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-                <p class="text-white text-lg font-medium">Wholesale Pricing Available via:</p>
-                <a href="mailto:buyaquatech@gmail.com"
-                    class="text-sky-400 text-2xl font-black hover:text-white transition">buyaquatech@gmail.com</a>
+        <!-- ========================= FEATURES ========================= -->
+        <section class="max-w-7xl mx-auto px-6 py-20 md:py-28">
+            <div class="text-center max-w-2xl mx-auto mb-14">
+                <span class="text-sky-600 font-black uppercase tracking-widest text-xs">Why Aquatech</span>
+                <h2 class="mt-3 text-3xl md:text-5xl font-black text-slate-900 italic tracking-tight">Built for the trade</h2>
+                <p class="mt-4 text-slate-500 text-lg">Everything a contractor or reseller needs to source supplies and lock in pricing, without the runaround.</p>
             </div>
-        </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="aqua-card bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 mb-6">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 014 8V3a1 1 0 011-1z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-extrabold text-slate-900 mb-2">Transparent Wholesale Pricing</h3>
+                    <p class="text-slate-500 leading-relaxed">Log in to unlock your custom trade pricing. What you see is what you pay. No surprises, no hidden fees.</p>
+                </div>
+                <div class="aqua-card bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 mb-6">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <h3 class="text-xl font-extrabold text-slate-900 mb-2">Pro-Grade Selection</h3>
+                    <p class="text-slate-500 leading-relaxed">A broad catalog of professional-grade plumbing &amp; heating supplies for contractors and resellers.</p>
+                </div>
+                <div class="aqua-card bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 mb-6">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-extrabold text-slate-900 mb-2">Quote in Minutes</h3>
+                    <p class="text-slate-500 leading-relaxed">Add items, set quantities by the box, and download a clean PDF quote, or send it straight to our team.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================== CTA BAND ========================== -->
+        <section class="aqua-grain relative overflow-hidden bg-slate-900">
+            <div class="aqua-blob absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-sky-600/30 pointer-events-none"></div>
+            <div class="aqua-blob absolute -top-24 -right-16 w-80 h-80 rounded-full bg-cyan-500/20 pointer-events-none"></div>
+            <div class="relative max-w-5xl mx-auto px-6 py-16 md:py-20 text-center">
+                <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">Ready for wholesale pricing?</h2>
+                <p class="mt-4 text-slate-300 text-lg max-w-2xl mx-auto">Reach out to our team or build a quote online to get set up with wholesale trade pricing.</p>
+                <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="mailto:buyaquatech@gmail.com"
+                        class="group px-8 py-4 bg-white text-slate-900 font-bold rounded-2xl hover:bg-sky-50 hover:-translate-y-0.5 transition-all text-base flex items-center gap-2.5 shadow-lg">
+                        <svg class="w-5 h-5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        buyaquatech@gmail.com
+                    </a>
+                    <button onclick="showPage('quote')"
+                        class="px-8 py-4 bg-sky-600 text-white font-bold rounded-2xl hover:bg-sky-500 hover:-translate-y-0.5 transition-all text-base shadow-lg shadow-sky-900/40">
+                        Build a Quote
+                    </button>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- PRODUCTS PAGE -->
@@ -131,7 +400,7 @@
                     <h2 class="text-3xl md:text-5xl font-black text-slate-900 italic">Products Catalog</h2>
                     <p class="text-slate-500 mt-2">Browse the Latest Products Sheet</p>
                 </div>
-                <a href="catalog.pdf" download
+                <a href="catalog.pdf" download="AQUATECH-Catalog-2026.pdf" onclick="downloadCatalogPDF(event)"
                     class="bg-sky-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-sky-700 transition flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -187,7 +456,7 @@
                         </div>
                     </div>
 
-                    <!-- SAVED PROFILE BAR — visible only when logged in -->
+                    <!-- SAVED PROFILE BAR: visible only when logged in -->
                     <div id="profileBar" style="display:none;"
                         class="mb-8 flex flex-wrap items-center gap-3 bg-sky-50 border border-sky-100 rounded-2xl px-5 py-3">
                         <svg class="w-4 h-4 text-sky-500 shrink-0" fill="none" stroke="currentColor"
@@ -196,7 +465,7 @@
                                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         <span class="text-xs font-black uppercase tracking-widest text-sky-700">Your Info</span>
-                        <span class="text-xs text-slate-400">— fill in your details and click Save so you never have to
+                        <span class="text-xs text-slate-400">Fill in your details and click Save so you never have to
                             retype them.</span>
                         <span id="priceStatus" class="text-xs font-bold text-slate-400 ml-2"></span>
                         <span class="flex-1"></span>
@@ -220,7 +489,7 @@
                         style="display:none;margin-bottom:24px;background:#f0f9ff;border:2px solid #38bdf8;border-radius:20px;padding:20px 24px;">
                         <div
                             style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#0369a1;margin-bottom:12px;">
-                            &#9989; Items from Catalog &mdash; will be submitted with your quote</div>
+                            &#9989; Items from Catalog will be submitted with your quote</div>
                         <div id="catalog-order-items" style="display:flex;flex-direction:column;gap:6px;"></div>
                         <div style="margin-top:12px;font-size:12px;color:#0369a1;">Fill in your contact details above
                             and click Submit Quote.</div>
@@ -264,23 +533,30 @@
     </div>
 
     <!-- FOOTER -->
-    <footer class="bg-slate-950 text-white pt-24 pb-12">
+    <footer class="aqua-grain bg-slate-950 text-white pt-24 pb-12">
         <div class="max-w-7xl mx-auto px-4">
             <div
-                class="flex flex-col md:flex-row justify-between items-start border-b border-slate-800 pb-16 mb-12 gap-12 text-center md:text-left">
+                class="flex flex-col md:flex-row justify-between items-center md:items-start border-b border-slate-800 pb-16 mb-12 gap-12 text-center md:text-left">
                 <div class="w-full md:w-auto flex flex-col items-center md:items-start">
-                    <!-- SVG LOGO (White Text Version) -->
-                    <svg viewBox="0 0 320 80" class="h-12 w-auto mb-6">
-                        <circle cx="35" cy="30" r="28" fill="#50C3E2" fill-opacity="0.9" />
-                        <circle cx="65" cy="30" r="28" fill="#006DAE" fill-opacity="0.9" />
-                        <circle cx="50" cy="30" r="14" fill="#020617" />
-                        <text x="105" y="48" font-family="Plus Jakarta Sans, sans-serif" font-weight="800"
+                    <!-- SVG LOGO (clean two-tone circular ring; white text for the dark footer) -->
+                    <svg viewBox="0 0 330 80" class="h-12 w-auto mb-6">
+                        <defs>
+                            <mask id="footerRingMask">
+                                <circle cx="40" cy="40" r="36" fill="#fff" />
+                                <circle cx="40" cy="40" r="16" fill="#000" />
+                            </mask>
+                        </defs>
+                        <g mask="url(#footerRingMask)">
+                            <rect x="0" y="0" width="80" height="80" fill="#54C2E6" />
+                            <circle cx="51" cy="48" r="32" fill="#1C77BD" />
+                        </g>
+                        <text x="96" y="52" font-family="Plus Jakarta Sans, sans-serif" font-weight="800"
                             font-style="italic" font-size="34" letter-spacing="-1.5" fill="white">AQUATECH</text>
                     </svg>
                     <p class="text-slate-400 max-w-sm">Premium wholesale distributor of plumbing and heating supplies.
                     </p>
                 </div>
-                <div>
+                <div class="w-full md:w-auto">
                     <h4 class="text-sky-400 text-xs font-black uppercase tracking-widest mb-6 italic">Support</h4>
                     <p class="text-sm font-bold mb-2">buyaquatech@gmail.com</p>
                     <p class="text-slate-500 text-sm">buyaquatech.com</p>
@@ -316,8 +592,8 @@
                         <div class="font-bold text-slate-800">${product.name}</div>
                     </td>
                     <td class="px-0 md:px-8 py-4 md:py-6 text-sm text-left font-black tracking-widest uppercase text-sky-700">${product.code}</td>
-                    <td class="px-0 md:px-8 py-4 md:py-6 text-sm text-left md:text-center font-bold text-slate-500">${product.box !== '' && product.box != null ? product.box : '&mdash;'}</td>
-                    <td class="price-cell px-0 md:px-8 py-4 md:py-6 text-sm text-right font-black text-green-700" data-code="${product.code}" data-box="${product.box || 1}" style="display:none;">&mdash;</td>
+                    <td class="px-0 md:px-8 py-4 md:py-6 text-sm text-left md:text-center font-bold text-slate-500">${product.box !== '' && product.box != null ? product.box : '-'}</td>
+                    <td class="price-cell px-0 md:px-8 py-4 md:py-6 text-sm text-right font-black text-green-700" data-code="${product.code}" data-box="${product.box || 1}" style="display:none;">-</td>
                     <td class="px-0 md:px-8 py-0 md:py-6 text-right">
                         <input type="number" data-name="${product.name.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" data-code="${product.code}" min="0" placeholder="0"
                         class="qty-input w-24 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-right outline-none focus:ring-2 focus:ring-sky-500 font-bold transition-all" step="1">
@@ -331,7 +607,7 @@
             renderProducts(window.CATALOG_DATA);
         } else {
             document.getElementById('fullProductTable').innerHTML =
-                '<tr><td colspan="3" style="padding:32px;text-align:center;color:#ef4444;font-weight:bold;">catalog.js missing — place catalog.js in the same folder as index.html.</td></tr>';
+                '<tr><td colspan="3" style="padding:32px;text-align:center;color:#ef4444;font-weight:bold;">catalog.js missing. Place catalog.js in the same folder as index.html.</td></tr>';
         }
 
         function filterProducts() {
@@ -397,6 +673,33 @@
                 }
 
                 // 3. catalog.html handles btn-cart natively via window.parent.showPage
+
+                // 4. Inject mobile-responsive CSS so the catalog fits narrow screens.
+                //    Lives here (not in catalog.html) so it survives catalog regeneration.
+                if (iDoc.head && !iDoc.getElementById('aqua-catalog-responsive')) {
+                    var st = iDoc.createElement('style');
+                    st.id = 'aqua-catalog-responsive';
+                    st.textContent = '@media(max-width:600px){' +
+                        '#topbar{gap:6px;padding:0 10px;}' +
+                        '.tb-title{display:none;}' +
+                        '.tb-left{flex:1;gap:6px;min-width:0;}' +
+                        '.tb-search-wrap{flex:1;min-width:0;}' +
+                        '.tb-search{width:100%;}' +
+                        '#btn-toc,#btn-cart{font-size:0;gap:0;padding:9px 12px;flex-shrink:0;}' +
+                        '#btn-toc>span,#btn-cart>span{font-size:16px;}' +
+                        '#btn-cart .cart-badge{font-size:11px;}' +
+                        '.search-results{min-width:240px;max-width:calc(100vw - 20px);}' +
+                        '#nav-bar{gap:12px;}' +
+                        '.nav-btn{min-width:0;gap:0;padding:0 14px;font-size:0;}' +
+                        '.nav-btn .nav-arrow{font-size:22px;}' +
+                        '#page-display{min-width:0;font-size:12px;}' +
+                        '.side-drawer{width:84vw;max-width:320px;}' +
+                        '.cart-drawer{width:90vw;max-width:340px;}' +
+                        '.qmodal-inner{flex-direction:column;}' +
+                        '.qmodal-img-wrap{width:80px;height:80px;}' +
+                        '}';
+                    iDoc.head.appendChild(st);
+                }
             } catch (err) {
                 console.warn('Catalog iframe patch failed:', err);
             }
@@ -408,7 +711,7 @@
             if (e.data.type !== 'aquatech-cart') return;
             var items = e.data.items;
             window._allCartItems = items;
-            // Stay on current page — user keeps browsing; quote form updates silently
+            // Stay on current page; user keeps browsing; quote form updates silently
             (window._catalogSourcedInputs || []).forEach(function (inp) { inp.value = ''; });
             window._catalogSourcedInputs = [];
             items.forEach(function (item) {
@@ -713,10 +1016,10 @@
                 var safeCode = l.code.replace(/"/g, '&quot;');
                 var pricePerPieceHtml = l.pricePerPiece !== null
                     ? '<span style="font-size:10px;font-weight:700;color:#0ea5e9;white-space:nowrap;">$' + l.pricePerPiece.toFixed(2) + '/pc</span>'
-                    : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">—/pc</span>';
+                    : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;">-/pc</span>';
                 var priceCell = l.lineTotal !== null
                     ? '<span style="font-size:12px;font-weight:800;color:#0f172a;white-space:nowrap;min-width:52px;text-align:right;">$' + l.lineTotal.toFixed(2) + '</span>'
-                    : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;min-width:52px;text-align:right;">—</span>';
+                    : '<span style="font-size:10px;color:#94a3b8;white-space:nowrap;min-width:52px;text-align:right;">-</span>';
                 return '<div style="padding:5px 0;border-bottom:1px solid #f1f5f9;">' +
                     '<div style="display:flex;align-items:center;gap:5px;">' +
                     '<div style="flex:1;min-width:0;">' +
@@ -780,7 +1083,7 @@
                 updateSubtotal();
                 var freshErr = document.querySelector('.pcs-err[data-code="' + code + '"]');
                 if (freshErr) {
-                    freshErr.textContent = pcs + ' pcs is not a full box — must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
+                    freshErr.textContent = pcs + ' pcs is not a full box. Must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
                     freshErr.style.display = 'block';
                 }
                 setTimeout(function () {
@@ -853,7 +1156,7 @@
                         : '';
                     var priceHtml = l.lineTotal !== null
                         ? '<span style="font-size:15px;font-weight:900;color:#0f172a;">$' + l.lineTotal.toFixed(2) + '</span>'
-                        : '<span style="font-size:13px;color:#94a3b8;">—</span>';
+                        : '<span style="font-size:13px;color:#94a3b8;">-</span>';
                     var safeCode = l.code.replace(/"/g, '&quot;');
                     div.innerHTML =
                         '<div style="display:flex;align-items:center;gap:8px;">' +
@@ -913,7 +1216,7 @@
                 updateSubtotal();
                 var freshErr = document.querySelector('.ov-pcs-err[data-code="' + code + '"]');
                 if (freshErr) {
-                    freshErr.textContent = pcs + ' pcs is not a full box — must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
+                    freshErr.textContent = pcs + ' pcs is not a full box. Must be a multiple of ' + boxQty + '. Rounded to ' + nearest + ' pcs.';
                     freshErr.style.display = 'block';
                 }
                 setTimeout(function () {
@@ -925,6 +1228,29 @@
 
         function refreshOverlayFromInputs() {
             updateSubtotal();
+        }
+
+        // Force the catalog PDF to download in the background instead of opening
+        // inline in the browser tab. Fetches as a blob so the server's inline
+        // Content-Disposition (or the browser's built-in PDF viewer) can't hijack it.
+        function downloadCatalogPDF(e) {
+            if (e) e.preventDefault();
+            var FILE = 'catalog.pdf', NAME = 'AQUATECH-Catalog-2026.pdf';
+            var triggerAnchor = function (href, revoke) {
+                var a = document.createElement('a');
+                a.href = href; a.download = NAME;
+                document.body.appendChild(a); a.click(); a.remove();
+                if (revoke) setTimeout(function () { URL.revokeObjectURL(href); }, 1500);
+            };
+            fetch(FILE).then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.blob();
+            }).then(function (blob) {
+                triggerAnchor(URL.createObjectURL(blob), true);
+            }).catch(function () {
+                // Fallback (e.g. file:// where fetch is blocked): native download attr
+                triggerAnchor(FILE, false);
+            });
         }
 
         function downloadQuotePDF() {
@@ -948,8 +1274,8 @@
             var hasPrice = lines.some(function(l){ return l.lineTotal !== null; });
             var total = lines.reduce(function(s,l){ return s + (l.lineTotal || 0); }, 0);
             var rows = lines.map(function(l) {
-                var pppcCell = l.pricePerPiece !== null ? '$' + l.pricePerPiece.toFixed(2) + '/pc' : '&mdash;';
-                var priceCell = l.lineTotal !== null ? '$' + l.lineTotal.toFixed(2) : '&mdash;';
+                var pppcCell = l.pricePerPiece !== null ? '$' + l.pricePerPiece.toFixed(2) + '/pc' : '-';
+                var priceCell = l.lineTotal !== null ? '$' + l.lineTotal.toFixed(2) : '-';
                 return '<tr style="border-bottom:1px solid #e2e8f0;">' +
                     '<td style="padding:10px 14px;font-size:13px;font-weight:600;color:#1e293b;">' + l.name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</td>' +
                     '<td style="padding:10px 14px;font-size:12px;color:#0369a1;font-weight:700;text-align:center;">' + l.code + '</td>' +
@@ -973,7 +1299,7 @@
                 '.footer{margin-top:40px;font-size:11px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:16px;}' +
                 '@media print{body{padding:20px;}.no-print{display:none!important;}}' +
                 '</style></head><body>' +
-                '<h1>AQUATECH &mdash; Quote Request</h1>' +
+                '<h1>AQUATECH Quote Request</h1>' +
                 '<p class="sub">Prepared: ' + dateStr + ' &nbsp;&bull;&nbsp; Prices subject to confirmation by Aquatech.</p>' +
                 '<table><thead><tr>' +
                 '<th>Description</th><th>Item Code</th><th>Qty (Boxes)</th><th>Total Pcs</th>' +
@@ -1054,7 +1380,7 @@
                     class="w-full px-4 py-3 border border-slate-200 rounded-xl mb-4 outline-none focus:ring-2 focus:ring-sky-500 font-medium text-sm">
                 <div id="resetError" class="text-red-500 text-xs font-bold mb-3 px-1" style="display:none;"></div>
                 <div id="resetSuccess" class="text-green-600 text-xs font-bold mb-3 px-1" style="display:none;">&#10003;
-                    Reset email sent — check your inbox.</div>
+                    Reset email sent. Check your inbox.</div>
                 <button onclick="doResetPassword()"
                     class="w-full py-3 bg-sky-600 text-white font-black rounded-xl hover:bg-sky-700 transition text-sm tracking-wide uppercase mb-4">Send
                     Reset Email</button>
@@ -1112,7 +1438,7 @@
             </button>
             <button onclick="downloadQuotePDF();event.stopPropagation();"
                 style="width:100%;margin-top:8px;padding:8px 0;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;font-size:11px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"
-                onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#38bdf8';this.style.color='#0369a1';"
+                onmouseover="this.style.background='#0f172a';this.style.borderColor='#0f172a';this.style.color='#ffffff';"
                 onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
                 <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Download Quote PDF
@@ -1141,17 +1467,17 @@
             </div>
             <div style="padding:16px 24px;display:flex;gap:10px;flex-shrink:0;background:#fff;border-top:1px solid #f1f5f9;">
                 <button onclick="document.getElementById('quoteForm').requestSubmit();closeSubtotalOverlay();"
-                    style="flex:1;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:background .15s;"
-                    onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'">Send Quote Request</button>
+                    style="flex:1;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:all .15s;"
+                    onmouseover="this.style.background='#ffffff';this.style.color='#0284c7';this.style.boxShadow='inset 0 0 0 2px #0284c7';" onmouseout="this.style.background='#0284c7';this.style.color='#ffffff';this.style.boxShadow='none';">Send Quote Request</button>
                 <button onclick="downloadQuotePDF();"
                     style="padding:12px 16px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:14px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s;"
-                    onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#38bdf8';this.style.color='#0369a1';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                    onmouseover="this.style.background='#0f172a';this.style.borderColor='#0f172a';this.style.color='#ffffff';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     PDF
                 </button>
                 <button onclick="closeSubtotalOverlay()"
                     style="padding:12px 16px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:14px;font-size:12px;font-weight:800;color:#475569;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;"
-                    onmouseover="this.style.background='#fee2e2';this.style.borderColor='#fca5a5';this.style.color='#dc2626';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
+                    onmouseover="this.style.background='#0f172a';this.style.borderColor='#0f172a';this.style.color='#ffffff';" onmouseout="this.style.background='#f1f5f9';this.style.borderColor='#e2e8f0';this.style.color='#475569';">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
                     Minimize
                 </button>
