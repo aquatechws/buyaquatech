@@ -201,6 +201,13 @@
         .aqua-search-result:hover { background-color: #f1f5f9; }
         .aqua-search-result:last-child { border-bottom: none !important; }
 
+        /* Product thumbnail tiles (search results + quote table) */
+        .prod-thumb-box { width: 44px; height: 44px; flex-shrink: 0; border-radius: 10px; background: #eef2f7; border: 1px solid rgba(148, 163, 184, .35); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .prod-thumb { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+        .prod-thumb-box:not(.has-img) .prod-thumb { display: none; }
+        .prod-thumb-box.has-img::after { display: none; }
+        .prod-thumb-box:not(.has-img)::after { content: ""; width: 18px; height: 18px; opacity: .55; background-repeat: no-repeat; background-size: contain; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='M21 15l-5-5L5 21'/%3E%3C/svg%3E"); }
+
         @media (prefers-color-scheme: dark) {
             /* Row hover highlight must be DARK so the light text stays readable
                (Tailwind's hover:bg-slate-50 would otherwise paint light-on-light) */
@@ -619,7 +626,10 @@
                 row.dataset.cat = product.cat;
                 row.innerHTML = `
                     <td class="px-0 md:px-8 py-0 md:py-6 text-sm">
-                        <div class="font-bold text-slate-800">${product.name}</div>
+                        <div class="flex items-center gap-3">
+                            <span class="prod-thumb-box"><img class="prod-thumb" data-code="${product.code}" alt="" loading="lazy" decoding="async"></span>
+                            <div class="font-bold text-slate-800">${product.name}</div>
+                        </div>
                     </td>
                     <td class="px-0 md:px-8 py-4 md:py-6 text-sm text-left font-black tracking-widest uppercase text-sky-700">${product.code}</td>
                     <td class="px-0 md:px-8 py-4 md:py-6 text-sm text-left md:text-center font-bold text-slate-500">${product.box !== '' && product.box != null ? product.box : '-'}</td>
@@ -730,6 +740,27 @@
                         '}';
                     iDoc.head.appendChild(st);
                 }
+
+                // 5. Build a product image map (SKU -> photo) from the flipbook cards,
+                //    so the quote table and global search can show thumbnails. Reuses the
+                //    base64 images catalog.html already embeds (no generator change needed).
+                try {
+                    var imap = window._productImages || {};
+                    iDoc.querySelectorAll('.fp-prod-card').forEach(function (card) {
+                        var sku = '';
+                        var dp = card.getAttribute('data-product');
+                        if (dp) { try { sku = (JSON.parse(dp).sku || '').trim(); } catch (e) {} }
+                        if (!sku) return;
+                        var im = card.querySelector('img.fp-prod-img');
+                        var src = im && (im.getAttribute('src') || im.src);
+                        if (src && src.indexOf('data:image') === 0) {
+                            imap[sku] = src;
+                            imap[sku.toLowerCase()] = src;
+                        }
+                    });
+                    window._productImages = imap;
+                    if (typeof applyProductImages === 'function') applyProductImages();
+                } catch (e) { console.warn('Catalog image map failed:', e); }
             } catch (err) {
                 console.warn('Catalog iframe patch failed:', err);
             }
@@ -786,6 +817,23 @@
         // ── GLOBAL CATALOG SEARCH ───────────────────────────────────────────
         function _aqEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+        // Product thumbnails (pulled from the catalog flipbook by SKU)
+        function fillThumbs(root) {
+            var m = window._productImages;
+            if (!m) return;
+            (root || document).querySelectorAll('img.prod-thumb[data-code]').forEach(function (img) {
+                if (img.getAttribute('src')) return;
+                var c = img.dataset.code || '';
+                var src = m[c] || m[c.toLowerCase()];
+                if (src) {
+                    img.src = src;
+                    var box = img.closest('.prod-thumb-box');
+                    if (box) box.classList.add('has-img');
+                }
+            });
+        }
+        function applyProductImages() { fillThumbs(document); }
+
         function toggleSearch() {
             var p = document.getElementById('searchPanel');
             if (p.style.display === 'block') closeSearch(); else openSearch();
@@ -828,6 +876,7 @@
             box.innerHTML = shown.map(function (p) {
                 var code = _aqEsc(p.code).replace(/'/g, "\\'");
                 return '<button type="button" class="aqua-search-result w-full text-left flex items-center gap-3 px-5 py-3 border-b border-slate-100 transition-colors" onclick="gotoProduct(\'' + code + '\')">' +
+                    '<span class="prod-thumb-box"><img class="prod-thumb" data-code="' + _aqEsc(p.code) + '" alt=""></span>' +
                     '<div class="flex-1 min-w-0">' +
                         '<div class="font-bold text-slate-800 text-sm truncate">' + _aqEsc(p.name) + '</div>' +
                         '<div class="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider font-semibold">' + _aqEsc(p.cat) + '</div>' +
@@ -838,6 +887,7 @@
             if (matches.length > shown.length) {
                 box.innerHTML += '<div class="px-5 py-2.5 text-center text-[11px] text-slate-400 bg-slate-50">Showing ' + shown.length + ' of ' + matches.length + ' matches. Keep typing to narrow.</div>';
             }
+            fillThumbs(box);
         }
         function gotoProduct(code) {
             closeSearch();
