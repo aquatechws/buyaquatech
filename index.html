@@ -195,10 +195,17 @@
         ::selection { background: #0ea5e9; color: #ffffff; }
         ::-moz-selection { background: #0ea5e9; color: #ffffff; }
 
+        /* Global catalog search */
+        #searchPanel { animation: aquaSearchIn .16s ease-out; }
+        @keyframes aquaSearchIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .aqua-search-result:hover { background-color: #f1f5f9; }
+        .aqua-search-result:last-child { border-bottom: none !important; }
+
         @media (prefers-color-scheme: dark) {
             /* Row hover highlight must be DARK so the light text stays readable
                (Tailwind's hover:bg-slate-50 would otherwise paint light-on-light) */
             .product-row:hover { background-color: #16202e !important; }
+            .aqua-search-result:hover { background-color: #16202e !important; }
         }
     </style>
     <!-- Firebase SDK (compat) -->
@@ -244,14 +251,18 @@
             </div>
 
             <div class="flex items-center space-x-3 sm:space-x-6 md:space-x-8">
-                <button onclick="showPage('home')"
+                <button onclick="showPage('home')" data-page="home"
                     class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap active">Home</button>
-                <button onclick="showPage('products')"
-                    class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Products</button>
-                <button onclick="showPage('quote')" class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Get a Quote</button>
+                <button onclick="showPage('products')" data-page="products"
+                    class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Catalog</button>
+                <button onclick="showPage('quote')" data-page="quote" class="nav-link text-xs sm:text-sm font-bold tracking-tight py-2 whitespace-nowrap">Get a Quote</button>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3">
+                <button onclick="toggleSearch()" id="searchToggle" type="button" aria-label="Search products"
+                    class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-sky-600 hover:border-sky-300 transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
                 <div id="nav-auth-area">
                     <button onclick="openLoginModal()"
                         class="text-sm font-bold text-slate-500 hover:text-sky-600 transition-colors px-3 py-2 border border-slate-200 rounded-xl">Login</button>
@@ -261,6 +272,25 @@
             </div>
         </div>
     </nav>
+
+    <!-- GLOBAL CATALOG SEARCH (works on any page) -->
+    <div id="searchBackdrop" onclick="closeSearch()" style="display:none;"
+        class="fixed inset-x-0 bottom-0 top-20 z-[55] bg-slate-900/25 backdrop-blur-sm"></div>
+    <div id="searchPanel" style="display:none;" class="fixed inset-x-0 top-[88px] z-[60] px-4">
+        <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-2xl ring-1 ring-slate-100 overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
+                <svg class="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input id="searchInput" type="text" autocomplete="off" placeholder="Search products by name or item #..."
+                    oninput="runHeaderSearch()" onkeydown="searchKeydown(event)"
+                    class="flex-1 min-w-0 bg-transparent outline-none text-slate-900 font-semibold text-base placeholder:text-slate-400">
+                <button onclick="closeSearch()" type="button" aria-label="Close search"
+                    class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div id="searchResults" class="max-h-[60vh] overflow-y-auto"></div>
+        </div>
+    </div>
 
     <!-- HOME PAGE -->
     <div id="home" class="page active">
@@ -742,7 +772,7 @@
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             document.querySelectorAll('.nav-link').forEach(link => {
-                if (link.innerText.toLowerCase().includes(pageId === 'quote' ? 'quote' : pageId)) link.classList.add('active');
+                if (link.dataset.page === pageId) link.classList.add('active');
             });
             window.scrollTo(0, 0);
             // Re-apply cached prices every time the quote page is shown
@@ -751,6 +781,82 @@
             }
             // Update floating subtotal on all pages
             if (typeof updateSubtotal === 'function') updateSubtotal();
+        }
+
+        // ── GLOBAL CATALOG SEARCH ───────────────────────────────────────────
+        function _aqEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        function toggleSearch() {
+            var p = document.getElementById('searchPanel');
+            if (p.style.display === 'block') closeSearch(); else openSearch();
+        }
+        function openSearch() {
+            document.getElementById('searchBackdrop').style.display = 'block';
+            document.getElementById('searchPanel').style.display = 'block';
+            var inp = document.getElementById('searchInput');
+            inp.value = '';
+            runHeaderSearch();
+            setTimeout(function () { inp.focus(); }, 30);
+        }
+        function closeSearch() {
+            document.getElementById('searchPanel').style.display = 'none';
+            document.getElementById('searchBackdrop').style.display = 'none';
+        }
+        function searchKeydown(e) {
+            if (e.key === 'Escape') { closeSearch(); }
+            else if (e.key === 'Enter') {
+                var first = document.querySelector('#searchResults .aqua-search-result');
+                if (first) first.click();
+            }
+        }
+        function runHeaderSearch() {
+            var box = document.getElementById('searchResults');
+            var q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+            if (!q) {
+                box.innerHTML = '<div class="px-5 py-8 text-center text-sm text-slate-400">Start typing to search the catalog by product name or item number.</div>';
+                return;
+            }
+            var data = window.CATALOG_DATA || [];
+            var matches = data.filter(function (p) {
+                return (p.name && p.name.toLowerCase().indexOf(q) > -1) || (p.code && p.code.toLowerCase().indexOf(q) > -1);
+            });
+            var shown = matches.slice(0, 12);
+            if (!shown.length) {
+                box.innerHTML = '<div class="px-5 py-8 text-center text-sm text-slate-400">No products match &ldquo;' + _aqEsc(q) + '&rdquo;.</div>';
+                return;
+            }
+            box.innerHTML = shown.map(function (p) {
+                var code = _aqEsc(p.code).replace(/'/g, "\\'");
+                return '<button type="button" class="aqua-search-result w-full text-left flex items-center gap-3 px-5 py-3 border-b border-slate-100 transition-colors" onclick="gotoProduct(\'' + code + '\')">' +
+                    '<div class="flex-1 min-w-0">' +
+                        '<div class="font-bold text-slate-800 text-sm truncate">' + _aqEsc(p.name) + '</div>' +
+                        '<div class="text-[11px] text-slate-400 mt-0.5 uppercase tracking-wider font-semibold">' + _aqEsc(p.cat) + '</div>' +
+                    '</div>' +
+                    '<span class="text-xs font-black tracking-widest uppercase text-sky-600 flex-shrink-0">' + _aqEsc(p.code) + '</span>' +
+                '</button>';
+            }).join('');
+            if (matches.length > shown.length) {
+                box.innerHTML += '<div class="px-5 py-2.5 text-center text-[11px] text-slate-400 bg-slate-50">Showing ' + shown.length + ' of ' + matches.length + ' matches. Keep typing to narrow.</div>';
+            }
+        }
+        function gotoProduct(code) {
+            closeSearch();
+            showPage('quote');
+            setTimeout(function () {
+                var input = null;
+                document.querySelectorAll('.qty-input').forEach(function (inp) { if (inp.dataset.code === code) input = inp; });
+                if (!input) return;
+                var row = input.closest('.product-row');
+                if (row) {
+                    if (row.dataset.collapsed === 'true' && typeof toggleCategory === 'function') { toggleCategory(row.dataset.cat); }
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    row.style.transition = 'background-color .3s ease';
+                    row.style.backgroundColor = dark ? '#163048' : '#e0f2fe';
+                    setTimeout(function () { row.style.backgroundColor = ''; }, 1600);
+                }
+                try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+            }, 80);
         }
     </script>
 
