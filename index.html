@@ -459,9 +459,23 @@
         <div class="max-w-6xl mx-auto px-4 py-12">
             <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden">
                 <div class="bg-slate-900 p-8 md:p-12 text-white">
-                    <h2 class="text-3xl md:text-4xl font-black mb-4 italic">Wholesale Quote Request</h2>
-                    <p class="text-slate-400">Order by the box. Submit below and our team will contact you with pricing.
-                    </p>
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                        <div>
+                            <h2 class="text-3xl md:text-4xl font-black mb-4 italic">Wholesale Quote Request</h2>
+                            <p class="text-slate-400">Order by the box. Submit below and our team will contact you with
+                                pricing.</p>
+                        </div>
+                        <div id="priceSheetWrap" style="display:none;"
+                            class="flex flex-col items-stretch md:items-end gap-1.5 flex-shrink-0">
+                            <button type="button" onclick="downloadPriceSheetPDF()"
+                                class="bg-sky-600 text-white px-6 py-3.5 rounded-2xl font-black text-sm tracking-wide uppercase shadow-lg shadow-sky-900/40 hover:bg-sky-700 transition-all active:scale-95 flex items-center justify-center gap-2.5 whitespace-nowrap">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download Price Sheet
+                            </button>
+                            <span class="text-[10px] leading-snug text-slate-400 md:text-right">Pricing is for quoting
+                                purposes only and not binding.</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- AUTOMATIC SUBMISSION FORM VIA FORMSPREE -->
@@ -984,9 +998,11 @@
                     if (n > 0) {
                         showPrices(priceMap);
                         setPriceStatus('ok', n);
+                        var _psb = document.getElementById('priceSheetWrap'); if (_psb) _psb.style.display = '';
                     } else {
                         showPrices({});
                         setPriceStatus('none');
+                        var _psbN = document.getElementById('priceSheetWrap'); if (_psbN) _psbN.style.display = 'none';
                     }
                 })
                 .catch(function (err) {
@@ -994,6 +1010,7 @@
                     window._cachedPrices = {};
                     showPrices({});
                     setPriceStatus('err');
+                    var _psbE = document.getElementById('priceSheetWrap'); if (_psbE) _psbE.style.display = 'none';
                 });
         }
 
@@ -1027,6 +1044,8 @@
             document.querySelectorAll('.price-cell').forEach(function (cell) {
                 cell.style.display = 'none';
             });
+            var psb = document.getElementById('priceSheetWrap'); if (psb) psb.style.display = 'none';
+            window._cachedPrices = null; // drop pricing when not logged in (no stale prices, button stays hidden)
         }
 
         // ── 4. PROFILE SAVE / LOAD ──────────────────────────────────────────
@@ -1443,7 +1462,7 @@
             }).join('');
             var dateStr = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
             var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Aquatech Quote</title>' +
-                '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui,sans-serif;color:#1e293b;padding:40px;}' +
+                '<style>*{margin:0;padding:0;box-sizing:border-box;}html{background:#fff;color-scheme:light;}body{font-family:system-ui,sans-serif;color:#1e293b;background:#fff;padding:40px;}' +
                 'h1{font-size:26px;font-weight:900;color:#0f172a;margin-bottom:4px;}' +
                 '.sub{font-size:13px;color:#64748b;margin-bottom:32px;}' +
                 'table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08);}' +
@@ -1470,6 +1489,85 @@
             var w = window.open('', '_blank', 'width=' + screen.width + ',height=' + screen.height + ',fullscreen=yes');
             if (w) { w.document.write(html); w.document.close(); }
             else { alert('Please allow popups for this site to download the PDF.'); }
+        }
+
+        // Optional: full personalized price sheet PDF (logged-in users with pricing).
+        function downloadPriceSheetPDF() {
+            // Hard guard: only available to a logged-in user who actually has pricing.
+            if (!_auth.currentUser || !window._cachedPrices || !Object.keys(window._cachedPrices).length) {
+                var _w = document.getElementById('priceSheetWrap'); if (_w) _w.style.display = 'none';
+                return;
+            }
+            var prices = window._cachedPrices || {};
+            var data = window.CATALOG_DATA || [];
+            var groups = [], byCat = {};
+            data.forEach(function (p) {
+                var raw = prices[p.code];
+                if (raw == null || raw === '' || isNaN(parseFloat(raw))) return; // only items priced for this account
+                var ppc = parseFloat(raw);
+                if (!byCat[p.cat]) { byCat[p.cat] = []; groups.push(p.cat); }
+                var box = parseFloat(p.box);
+                var hasBox = !isNaN(box) && box > 0;
+                byCat[p.cat].push({ name: p.name, code: p.code, box: hasBox ? box : null, ppc: ppc, pbox: hasBox ? ppc * box : null });
+            });
+            var totalItems = groups.reduce(function (s, c) { return s + byCat[c].length; }, 0);
+            if (!totalItems) { alert('No pricing is loaded for your account yet. Log in to see your pricing first.'); return; }
+
+            var money = function (n) { return '$' + Number(n).toFixed(2); };
+            var company = ((document.getElementById('fieldCompany') || {}).value || '').trim();
+            var email = (_auth && _auth.currentUser && _auth.currentUser.email) || ((document.getElementById('fieldEmail') || {}).value || '');
+            var dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            var body = groups.map(function (cat) {
+                var rows = byCat[cat].map(function (l) {
+                    return '<tr>' +
+                        '<td>' + _aqEsc(l.name) + '</td>' +
+                        '<td class="code">' + _aqEsc(l.code) + '</td>' +
+                        '<td class="num">' + (l.box != null ? l.box : '-') + '</td>' +
+                        '<td class="ppc">' + money(l.ppc) + '</td>' +
+                        '<td class="pbox">' + (l.pbox != null ? money(l.pbox) : '-') + '</td>' +
+                        '</tr>';
+                }).join('');
+                return '<div class="cat">' + _aqEsc(cat) + '</div>' +
+                    '<table><colgroup><col style="width:40%"><col style="width:14%"><col style="width:14%"><col style="width:16%"><col style="width:16%"></colgroup><thead><tr><th>Description</th><th style="text-align:center;">Item Code</th>' +
+                    '<th style="text-align:center;">Pcs / Box</th><th style="text-align:right;">Price / Piece</th>' +
+                    '<th style="text-align:right;">Price / Box</th></tr></thead><tbody>' + rows + '</tbody></table>';
+            }).join('');
+
+            var logo = '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><mask id="psr"><circle cx="40" cy="40" r="36" fill="#fff"/><circle cx="40" cy="40" r="16" fill="#000"/></mask></defs><g mask="url(#psr)"><rect width="80" height="80" fill="#54C2E6"/><circle cx="51" cy="48" r="32" fill="#1C77BD"/></g></svg>';
+
+            var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AQUATECH Price Sheet</title><style>' +
+                '*{margin:0;padding:0;box-sizing:border-box;}' +
+                'html{background:#ffffff;color-scheme:light;}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1e293b;background:#ffffff;padding:40px 44px;}' +
+                '.head{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0f172a;padding-bottom:16px;}' +
+                '.brand{display:flex;align-items:center;gap:13px;}.brand svg{width:44px;height:44px;}' +
+                '.brand .nm{font-size:23px;font-weight:900;font-style:italic;letter-spacing:-1px;color:#0f172a;}' +
+                '.dt{text-align:right;}.dt .t{font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#0284c7;}.dt .d{font-size:13px;color:#475569;margin-top:5px;font-weight:600;}.dt .d b{color:#0f172a;font-weight:800;}' +
+                '.meta{display:flex;gap:26px;flex-wrap:wrap;font-size:12px;color:#475569;margin:14px 0 4px;}.meta b{color:#0f172a;}' +
+                '.cat{font-size:11.5px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#fff;background:#0f172a;padding:7px 12px;border-radius:7px;margin:20px 0 0;}' +
+                'table{width:100%;border-collapse:collapse;table-layout:fixed;}' +
+                'thead th{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;text-align:left;padding:8px 12px;border-bottom:1.5px solid #e2e8f0;}' +
+                'tbody td{padding:7px 12px;font-size:12px;border-bottom:1px solid #f1f5f9;color:#1e293b;}' +
+                'tbody tr:nth-child(even){background:#f8fafc;}' +
+                '.code{color:#0369a1;font-weight:700;text-align:center;}.num{text-align:center;color:#64748b;}' +
+                '.ppc{text-align:right;font-weight:700;color:#0ea5e9;}.pbox{text-align:right;font-weight:800;color:#0f172a;}' +
+                'tr,thead{page-break-inside:avoid;}' +
+                '.foot{margin-top:28px;font-size:12px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:14px;line-height:1.7;}' +
+                '@media print{body{padding:22px 26px;}}' +
+                '</style></head><body>' +
+                '<div class="head"><div class="brand">' + logo + '<span class="nm">AQUATECH</span></div>' +
+                '<div class="dt"><div class="t">Wholesale Price Sheet</div><div class="d">Pricing as of <b>' + dateStr + '</b></div></div></div>' +
+                '<div class="meta">' +
+                (company ? '<span>Prepared for: <b>' + _aqEsc(company) + '</b></span>' : '') +
+                (email ? '<span>Account: <b>' + _aqEsc(email) + '</b></span>' : '') +
+                '<span>Priced items: <b>' + totalItems + '</b></span></div>' +
+                body +
+                '<div class="foot"><b style="color:#475569;">For quoting purposes only and not binding.</b> Pricing shown is specific to your account and subject to change without notice. Box price = price per piece &times; pieces per box.<br>AQUATECH Premium Wholesale Plumbing Supplies &bull; buyaquatech@gmail.com &bull; buyaquatech.com</div>' +
+                '<script>window.onload=function(){window.print();}<\/script></body></html>';
+
+            var w = window.open('', '_blank', 'width=' + screen.width + ',height=' + screen.height);
+            if (w) { w.document.write(html); w.document.close(); }
+            else { alert('Please allow popups for this site to download the price sheet.'); }
         }
 
         // Close modal on backdrop click
