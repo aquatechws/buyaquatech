@@ -812,7 +812,8 @@
             if (typeof updateSubtotal === 'function') updateSubtotal();
         });
 
-        function showPage(pageId) {
+        function showPage(pageId, opts) {
+            opts = opts || {};
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
@@ -826,6 +827,15 @@
             }
             // Update floating subtotal on all pages
             if (typeof updateSubtotal === 'function') updateSubtotal();
+            // Keep the address bar in sync with the visible page (adds clean URLs; navigation is unchanged).
+            if (!opts.noUrl) {
+                var newPath = pageId === 'home' ? '/' : (pageId === 'products' ? '/catalog' : '/' + pageId);
+                try {
+                    if (location.pathname !== newPath) {
+                        history[opts.replace ? 'replaceState' : 'pushState']({ aquaPage: pageId }, '', newPath);
+                    }
+                } catch (e) { /* file:// blocks pushState; the page still switches normally */ }
+            }
         }
 
         // ── GLOBAL CATALOG SEARCH ───────────────────────────────────────────
@@ -1738,6 +1748,43 @@
             </div>
         </div>
     </div>
+
+    <!-- ================================================================
+         CLEAN URL ROUTER  (/catalog, /quote via the History API)
+         Purely additive: in-app navigation and every existing feature
+         behave exactly as before; this only keeps the address bar in sync
+         and lets deep links / back-forward work.
+         ================================================================ -->
+    <script>
+        (function () {
+            function pageForPath(path) {
+                path = (path || '/').replace(/\/+$/, '');
+                if (path === '' || path === '/home' || path === '/index.html') return 'home';
+                if (path === '/catalog' || path === '/products') return 'products';
+                if (path === '/quote') return 'quote';
+                return null; // unknown path
+            }
+            // If a static host (e.g. GitHub Pages) served 404.html for a deep link,
+            // it stashed the real path; restore it here without reloading.
+            try {
+                var stashed = sessionStorage.getItem('aqua-spa-redirect');
+                if (stashed) {
+                    sessionStorage.removeItem('aqua-spa-redirect');
+                    if (stashed !== location.pathname + location.search + location.hash) {
+                        history.replaceState(null, '', stashed);
+                    }
+                }
+            } catch (e) {}
+            // Route the initial load to match the URL.
+            var pid = pageForPath(location.pathname);
+            if (pid === null) { pid = 'home'; try { history.replaceState(null, '', '/'); } catch (e) {} }
+            if (typeof showPage === 'function') showPage(pid, { replace: true });
+            // Browser back / forward.
+            window.addEventListener('popstate', function () {
+                if (typeof showPage === 'function') showPage(pageForPath(location.pathname) || 'home', { noUrl: true });
+            });
+        })();
+    </script>
 </body>
 
 </html>
