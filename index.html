@@ -988,32 +988,61 @@
             else if (state === 'none') { el.textContent = '\u26a0 No prices on file \u2014 contact Aquatech'; el.style.color = '#d97706'; }
             else if (state === 'err') { el.textContent = '\u2717 Could not load prices'; el.style.color = '#dc2626'; }
         }
+        function applyPriceMap(priceMap) {
+            var n = Object.keys(priceMap).length;
+            window._cachedPrices = priceMap;
+            if (n > 0) {
+                showPrices(priceMap);
+                setPriceStatus('ok', n);
+                var _psb = document.getElementById('priceSheetWrap'); if (_psb) _psb.style.display = '';
+            } else {
+                showPrices({});
+                setPriceStatus('none');
+                var _psbN = document.getElementById('priceSheetWrap'); if (_psbN) _psbN.style.display = 'none';
+            }
+        }
+        // Sheet1 formats the worker may return:
+        //   Old: email | code | price   (one row per customer × SKU)
+        //   New: email | multiplier in A-B, sku | list in D-E
+        //        site does price = list × that customer's multiplier
+        function priceMapFromSheet(values, email) {
+            var want = (email || '').trim().toLowerCase();
+            var header = (values[0] || []).map(function (h) { return String(h || '').trim().toLowerCase(); });
+            var rows = values.slice(1);
+            var priceMap = {};
+            var looksOld = header[0] === 'email' && (header[1] === 'code' || header[1] === 'sku') && header[2] === 'price';
+            if (looksOld) {
+                rows.forEach(function (row) {
+                    var rowEmail = String(row[0] || '').trim().toLowerCase();
+                    var code = String(row[1] || '').trim();
+                    var price = parseFloat(row[2]);
+                    if (rowEmail === want && code && !isNaN(price)) priceMap[code] = price;
+                });
+                return priceMap;
+            }
+            var multByEmail = {};
+            var listBySku = {};
+            rows.forEach(function (row) {
+                var e = String(row[0] || '').trim().toLowerCase();
+                var m = parseFloat(row[1]);
+                if (e && e !== 'email' && !isNaN(m)) multByEmail[e] = m;
+                var sku = String(row[3] || '').trim();
+                var list = parseFloat(row[4]);
+                if (sku && sku.toLowerCase() !== 'sku' && !isNaN(list)) listBySku[sku] = list;
+            });
+            var mult = multByEmail[want];
+            if (mult == null) return {};
+            Object.keys(listBySku).forEach(function (sku) {
+                priceMap[sku] = listBySku[sku] * mult;
+            });
+            return priceMap;
+        }
         function fetchUserPrices(email) {
             setPriceStatus('loading');
             fetch('https://aquatech-pricing.rafaeljsondon.workers.dev')
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    var rows = (data.values || []).slice(1); // skip header row
-                    var priceMap = {};
-                    rows.forEach(function (row) {
-                        var rowEmail = (row[0] || '').trim().toLowerCase();
-                        var code = (row[1] || '').trim();
-                        var price = parseFloat(row[2]);
-                        if (rowEmail === email.toLowerCase() && code && !isNaN(price)) {
-                            priceMap[code] = price; // price per box
-                        }
-                    });
-                    var n = Object.keys(priceMap).length;
-                    window._cachedPrices = priceMap;
-                    if (n > 0) {
-                        showPrices(priceMap);
-                        setPriceStatus('ok', n);
-                        var _psb = document.getElementById('priceSheetWrap'); if (_psb) _psb.style.display = '';
-                    } else {
-                        showPrices({});
-                        setPriceStatus('none');
-                        var _psbN = document.getElementById('priceSheetWrap'); if (_psbN) _psbN.style.display = 'none';
-                    }
+                    applyPriceMap(priceMapFromSheet(data.values || [], email));
                 })
                 .catch(function (err) {
                     console.error('[Aquatech] Worker error:', err);
