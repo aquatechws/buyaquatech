@@ -1005,6 +1005,11 @@
         //   Old: email | code | price   (one row per customer × SKU)
         //   New: email | multiplier in A-B, sku | list in D-E
         //        site does price = list × that customer's multiplier
+        function parseMoney(v) {
+            if (v == null || v === '') return NaN;
+            if (typeof v === 'number') return v;
+            return parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+        }
         function priceMapFromSheet(values, email) {
             var want = (email || '').trim().toLowerCase();
             var header = (values[0] || []).map(function (h) { return String(h || '').trim().toLowerCase(); });
@@ -1015,7 +1020,7 @@
                 rows.forEach(function (row) {
                     var rowEmail = String(row[0] || '').trim().toLowerCase();
                     var code = String(row[1] || '').trim();
-                    var price = parseFloat(row[2]);
+                    var price = parseMoney(row[2]);
                     if (rowEmail === want && code && !isNaN(price)) priceMap[code] = price;
                 });
                 return priceMap;
@@ -1024,10 +1029,10 @@
             var listBySku = {};
             rows.forEach(function (row) {
                 var e = String(row[0] || '').trim().toLowerCase();
-                var m = parseFloat(row[1]);
+                var m = parseMoney(row[1]);
                 if (e && e !== 'email' && !isNaN(m)) multByEmail[e] = m;
                 var sku = String(row[3] || '').trim();
-                var list = parseFloat(row[4]);
+                var list = parseMoney(row[4]);
                 if (sku && sku.toLowerCase() !== 'sku' && !isNaN(list)) listBySku[sku] = list;
             });
             var mult = multByEmail[want];
