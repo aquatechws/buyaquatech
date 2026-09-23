@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQUATECH</title>
+    <script>
+        // Single-page-app fallback.
+        // Static hosts (GitHub Pages, etc.) serve this file for unknown paths such as
+        // /catalog or /quote. We remember the requested path, then hand off to the app
+        // root (index.html), which restores the path via the History API and shows the
+        // right page. Deep links and refreshes therefore work without a real /catalog file.
+        (function () {
+            try {
+                sessionStorage.setItem('aqua-spa-redirect', location.pathname + location.search + location.hash);
+            } catch (e) {}
+            location.replace('/');
+        })();
+    </script>
+</head>
+<body></body>
+</html>
