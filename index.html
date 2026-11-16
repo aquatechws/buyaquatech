@@ -630,6 +630,27 @@
         .pw-toggle { position: absolute; right: 6px; top: 50%; height: 38px; padding: 0 12px; border-radius: 10px; transform: translateY(-50%); color: var(--aq-accent-text); font-size: 13px; font-weight: 800; }
         .auth-error { margin-top: 10px; padding: 0 2px; font-size: 13px; font-weight: 700; color: var(--aq-danger); }
         .auth-ok { margin-top: 10px; padding: 0 2px; font-size: 13px; font-weight: 700; color: var(--aq-ok); }
+        .auth-sub { color: var(--aq-text-2); }
+        .aq-auth-card .field-label { color: var(--aq-text-2); }
+        .aq-auth-card .field-input::placeholder { color: var(--aq-muted) !important; opacity: 1; font-weight: 500; }
+        .auth-section { display: flex; align-items: center; gap: 10px; margin: 24px 0 14px; font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--aq-accent-text); }
+        .auth-section::after { content: ''; flex: 1; height: 1px; background: var(--aq-border-strong); }
+        .auth-hint { margin-top: 10px; font-size: 12.5px; line-height: 1.5; color: var(--aq-text-2); }
+        .cert-drop { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 1.5px dashed var(--aq-accent-text); background: var(--aq-accent-softer); cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; }
+        .cert-drop:hover { background: var(--aq-accent-soft); }
+        .cert-drop:focus-within { box-shadow: var(--aq-focus); }
+        .cert-drop input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+        .cert-drop .cd-icon { flex: none; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 13px; background: #0284c7; color: #fff; }
+        .cert-drop .cd-icon svg { width: 22px; height: 22px; }
+        .cert-drop .cd-check { display: none; }
+        .cert-drop.has-file { border-style: solid; border-color: var(--aq-ok); background: var(--aq-surface-2); }
+        .cert-drop.has-file .cd-icon { background: var(--aq-ok); color: var(--aq-bg); }
+        .cert-drop.has-file .cd-up { display: none; }
+        .cert-drop.has-file .cd-check { display: block; }
+        .cert-drop .cd-text { flex: 1; min-width: 0; }
+        .cert-drop .cd-title { display: block; font-size: 15px; font-weight: 800; color: var(--aq-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cert-drop .cd-sub { display: block; margin-top: 2px; font-size: 12.5px; color: var(--aq-text-2); }
+        .cert-drop .cd-action { flex: none; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; color: var(--aq-accent-text); border: 1.5px solid var(--aq-accent-text); }
         .auth-link { padding: 8px 2px; font-weight: 800; color: var(--aq-accent-text); }
         @media (hover: hover) { .auth-link:hover { text-decoration: underline; } }
 
@@ -898,6 +919,39 @@
             </div>
         </section>
 
+        <!-- ========================= HOW PRICING WORKS ========================= -->
+        <section class="max-w-7xl mx-auto px-5 md:px-6" style="padding-bottom:clamp(48px, 8vw, 96px);">
+            <div class="text-center max-w-2xl mx-auto mb-7 md:mb-14">
+                <span class="home-eyebrow-label">Trade accounts</span>
+                <h2 class="mt-2 md:mt-3 text-2xl md:text-5xl font-black text-slate-900 italic tracking-tight">How pricing works</h2>
+                <p class="mt-3 md:mt-4 text-slate-500 text-base md:text-lg">Wholesale pricing is for verified trade accounts only.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-3 md:gap-6">
+                <div class="aqua-card bg-white rounded-2xl md:rounded-3xl p-5 md:p-8 border border-slate-100">
+                    <p class="text-sky-600 font-black text-3xl md:text-4xl mb-2 md:mb-4 leading-none">1</p>
+                    <h3 class="text-base md:text-xl font-extrabold text-slate-900 mb-1 md:mb-2">Apply</h3>
+                    <p class="text-sm md:text-base text-slate-500 leading-relaxed">Create an account with your business name, contact details, and resale certificate and sales tax ID number.</p>
+                </div>
+                <div class="aqua-card bg-white rounded-2xl md:rounded-3xl p-5 md:p-8 border border-slate-100">
+                    <p class="text-sky-600 font-black text-3xl md:text-4xl mb-2 md:mb-4 leading-none">2</p>
+                    <h3 class="text-base md:text-xl font-extrabold text-slate-900 mb-1 md:mb-2">We verify</h3>
+                    <p class="text-sm md:text-base text-slate-500 leading-relaxed">Our team confirms every business by hand before any pricing is shown.</p>
+                </div>
+                <div class="aqua-card bg-white rounded-2xl md:rounded-3xl p-5 md:p-8 border border-slate-100">
+                    <p class="text-sky-600 font-black text-3xl md:text-4xl mb-2 md:mb-4 leading-none">3</p>
+                    <h3 class="text-base md:text-xl font-extrabold text-slate-900 mb-1 md:mb-2">See your pricing</h3>
+                    <p class="text-sm md:text-base text-slate-500 leading-relaxed">Log in to view your trade pricing and send quote requests.</p>
+                </div>
+            </div>
+            <div class="mt-3 md:mt-6 bg-slate-900 rounded-2xl md:rounded-3xl p-5 md:p-10 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                <div>
+                    <h3 class="text-base md:text-xl font-extrabold mb-1 md:mb-2">Store policy</h3>
+                    <p class="text-sm md:text-base text-slate-300 leading-relaxed max-w-3xl">Pricing is shown only to verified trade accounts and is never given over the phone. Payment is in store only: cash or credit/debit card. No checks, and no card payments by phone or online.</p>
+                </div>
+                <button type="button" onclick="openLoginModal(); switchToRegister();" class="btn btn-primary btn-lg whitespace-nowrap">Apply for an account</button>
+            </div>
+        </section>
+
         <!-- ========================== CTA BAND ========================== -->
         <section class="home-cta aqua-grain relative overflow-hidden">
             <div class="relative max-w-5xl mx-auto px-5 md:px-6 py-12 md:py-20 text-center">
@@ -967,6 +1021,18 @@
                             </button>
                             <span class="flex-1 min-w-[9rem] text-[11px] leading-snug text-slate-500">Pricing is for quoting purposes only and not binding.</span>
                         </div>
+                    </div>
+
+                    <!-- TRADE VERIFICATION (signed-in customers) -->
+                    <div id="certCard" class="acct-strip" style="display:none;margin-top:12px;">
+                        <div class="flex-1 min-w-[12rem]">
+                            <p class="text-sm font-bold text-slate-900">Trade verification</p>
+                            <p id="certStatus" class="text-xs text-slate-500 leading-snug">Checking&hellip;</p>
+                        </div>
+                        <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                            <span id="certBtnLabel">Upload certificate</span>
+                            <input id="certFile" type="file" accept="application/pdf,image/jpeg,image/png" hidden onchange="onCertFileChosen(this)">
+                        </label>
                     </div>
 
                     <!-- AUTOMATIC SUBMISSION FORM VIA FORMSPREE -->
@@ -1771,7 +1837,7 @@
 
         // ── SMALL UI HELPERS ────────────────────────────────────────────────
         var _toastTimer = null;
-        function showToast(msg) {
+        function showToast(msg, ms) {
             var t = document.getElementById('aqToast');
             if (!t) { alert(msg); return; }
             t.textContent = msg;
@@ -1780,7 +1846,7 @@
             void t.offsetWidth;
             t.classList.add('is-in');
             clearTimeout(_toastTimer);
-            _toastTimer = setTimeout(function () { t.hidden = true; }, 3000);
+            _toastTimer = setTimeout(function () { t.hidden = true; }, ms || 3000);
         }
 
         function whenIdle(fn) {
@@ -2076,6 +2142,50 @@
         // so its SDK is fetched on demand instead of slowing down every visit.
         var FIRESTORE_SDK = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js';
         var _dbPromise = null;
+        var STORAGE_SDK = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js';
+        var _storagePromise = null;
+        function getStorage() {
+            if (!_storagePromise) {
+                _storagePromise = new Promise(function (resolve, reject) {
+                    if (typeof firebase.storage === 'function') { resolve(firebase.storage()); return; }
+                    var s = document.createElement('script');
+                    s.src = STORAGE_SDK;
+                    s.async = true;
+                    s.onload = function () { try { resolve(firebase.storage()); } catch (e) { reject(e); } };
+                    s.onerror = function () { reject(new Error('Could not load file upload')); };
+                    document.head.appendChild(s);
+                }).catch(function (err) { _storagePromise = null; throw err; });
+            }
+            return _storagePromise;
+        }
+
+        var CERT_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+        var CERT_MAX_BYTES = 10 * 1024 * 1024;
+        function validateCertFile(file) {
+            if (!file) return 'Please attach your signed resale or exemption certificate.';
+            if (CERT_TYPES.indexOf(file.type) === -1) return 'Certificate must be a PDF, JPG, or PNG file.';
+            if (file.size > CERT_MAX_BYTES) return 'Certificate must be 10 MB or smaller.';
+            return '';
+        }
+        function uploadCertificate(file, uid) {
+            return getStorage().then(function (storage) {
+                var safe = file.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80);
+                var path = 'resale-certificates/' + uid + '/' + Date.now() + '-' + safe;
+                return storage.ref(path).put(file, { contentType: file.type }).then(function () {
+                    return { path: path, name: file.name, size: file.size, contentType: file.type, uploadedAt: new Date().toISOString() };
+                });
+            });
+        }
+        function notifyAquatech(fields) {
+            try {
+                fetch('https://formspree.io/f/maqlojkj', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(fields)
+                }).catch(function () {});
+            } catch (e) {}
+        }
+
         function getDb() {
             if (!_dbPromise) {
                 _dbPromise = new Promise(function (resolve, reject) {
@@ -2126,6 +2236,8 @@
             var signedOut = document.getElementById('acctSignedOut'), signedIn = document.getElementById('acctSignedIn');
             if (signedOut) signedOut.style.display = user ? 'none' : '';
             if (signedIn) signedIn.style.display = user ? '' : 'none';
+            var certCard = document.getElementById('certCard');
+            if (certCard) certCard.style.display = user ? '' : 'none';
             if (!user) closeAccountSheet();
         }
 
@@ -2369,6 +2481,7 @@
                 return db.collection('profiles').doc(email).get();
             }).then(function (doc) {
                 if (!_auth.currentUser || _auth.currentUser.email !== email) return;   // signed out meanwhile
+                renderCertStatus(doc.exists ? doc.data() : null);
                 if (doc.exists) {
                     var d = doc.data();
                     if (d.company) document.getElementById('fieldCompany').value = d.company;
@@ -2493,14 +2606,108 @@
                 errDiv.style.display = 'block';
             }).then(function () { _setBusy(btn, false); });
         }
+        function regCertChanged(input) {
+            var drop = document.getElementById('regCertDrop');
+            var title = document.getElementById('regCertTitle');
+            var sub = document.getElementById('regCertSub');
+            var act = document.getElementById('regCertAction');
+            var errDiv = document.getElementById('regError');
+            var file = input.files && input.files[0];
+            if (file) {
+                var err = validateCertFile(file);
+                if (err) {
+                    input.value = '';
+                    file = null;
+                    errDiv.textContent = err;
+                    errDiv.style.display = 'block';
+                } else {
+                    errDiv.style.display = 'none';
+                }
+            }
+            if (file) {
+                var mb = file.size / 1048576;
+                drop.classList.add('has-file');
+                title.textContent = file.name;
+                sub.textContent = (mb >= 1 ? mb.toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB') + ' ready to upload';
+                act.textContent = 'Change';
+            } else {
+                drop.classList.remove('has-file');
+                title.textContent = 'Upload certificate';
+                sub.textContent = 'PDF, JPG, or PNG, up to 10 MB';
+                act.textContent = 'Choose file';
+            }
+        }
         function doRegister() {
             var email = document.getElementById('regEmail').value.trim();
             var password = document.getElementById('regPassword').value;
+            var company = document.getElementById('regCompany').value.trim();
+            var contact = document.getElementById('regContact').value.trim();
+            var phone = document.getElementById('regPhone').value.trim();
+            var license = document.getElementById('regLicense').value.trim();
+            var certInput = document.getElementById('regCert');
+            var file = certInput && certInput.files ? certInput.files[0] : null;
             var errDiv = document.getElementById('regError');
             var btn = document.getElementById('registerBtn');
             errDiv.style.display = 'none';
-            _setBusy(btn, true, 'Creating account…');
-            _auth.createUserWithEmailAndPassword(email, password).catch(function (err) {
+            if (!company || !contact || !phone || !license) {
+                errDiv.textContent = 'Please complete every field so we can verify your business.';
+                errDiv.style.display = 'block';
+                return;
+            }
+            var fileErr = validateCertFile(file);
+            if (fileErr) {
+                errDiv.textContent = fileErr;
+                errDiv.style.display = 'block';
+                return;
+            }
+            _setBusy(btn, true, 'Creating account\u2026');
+            _auth.createUserWithEmailAndPassword(email, password).then(function (cred) {
+                var uid = cred.user.uid;
+                var userEmail = (cred.user && cred.user.email) || email.toLowerCase();
+                return uploadCertificate(file, uid).then(function (meta) {
+                    return { meta: meta };
+                }).catch(function (e) {
+                    console.error('Certificate upload error:', e);
+                    return { meta: null };
+                }).then(function (res) {
+                    var profile = {
+                        company: company,
+                        contact: contact,
+                        phone: phone,
+                        certificateOfAuthority: license,
+                        uid: uid,
+                        applied: new Date().toISOString()
+                    };
+                    if (res.meta) profile.certificate = res.meta;
+                    return getDb().then(function (db) {
+                        return db.collection('profiles').doc(userEmail).set(profile, { merge: true });
+                    }).catch(function (e) {
+                        console.error('Application profile save error:', e);
+                    }).then(function () {
+                        notifyAquatech({
+                            _subject: 'New trade account application: ' + company,
+                            form_type: 'Account application',
+                            company: company,
+                            contact_person: contact,
+                            phone: phone,
+                            certificate_of_authority_number: license,
+                            certificate_uploaded: res.meta ? 'yes' : 'NO (upload failed)',
+                            certificate_storage_path: res.meta ? res.meta.path : '',
+                            firebase_uid: uid,
+                            email: userEmail,
+                            _replyto: userEmail
+                        });
+                        var fc = document.getElementById('fieldCompany'); if (fc && !fc.value) fc.value = company;
+                        var fn = document.getElementById('fieldContact'); if (fn && !fn.value) fn.value = contact;
+                        var fp = document.getElementById('fieldPhone'); if (fp && !fp.value) fp.value = phone;
+                        if (res.meta) {
+                            showToast('Application received. We will verify your business and email you when your pricing is unlocked.', 7000);
+                        } else {
+                            showToast('Account created, but your certificate did not upload. Upload it from the Quote page.', 8000);
+                        }
+                    });
+                });
+            }).catch(function (err) {
                 var msg;
                 if (err.code === 'auth/email-already-in-use') {
                     msg = 'An account with this email already exists.';
@@ -2514,6 +2721,54 @@
                 errDiv.textContent = msg;
                 errDiv.style.display = 'block';
             }).then(function () { _setBusy(btn, false); });
+        }
+
+        // Trade verification card (signed-in customers can replace their certificate at any time)
+        function renderCertStatus(d) {
+            var st = document.getElementById('certStatus');
+            var lb = document.getElementById('certBtnLabel');
+            if (!st || !lb) return;
+            var cert = d && d.certificate;
+            if (d && d.verified === true) {
+                st.textContent = 'Verified' + (cert && cert.name ? ' \u2022 ' + cert.name : '');
+                st.style.color = '#16a34a';
+            } else if (cert && cert.name) {
+                var when = cert.uploadedAt ? new Date(cert.uploadedAt).toLocaleDateString() : '';
+                st.textContent = 'On file: ' + cert.name + (when ? ' (uploaded ' + when + ')' : '') + '. Aquatech will verify it before pricing is unlocked.';
+                st.style.color = '';
+            } else {
+                st.textContent = 'Upload your signed resale or exemption certificate so we can verify your account.';
+                st.style.color = '#d97706';
+            }
+            lb.textContent = cert && cert.name ? 'Replace certificate' : 'Upload certificate';
+        }
+        function onCertFileChosen(input) {
+            var file = input.files && input.files[0];
+            var user = _auth.currentUser;
+            if (!file || !user) return;
+            var err = validateCertFile(file);
+            if (err) { showToast(err, 5000); input.value = ''; return; }
+            var st = document.getElementById('certStatus');
+            if (st) { st.textContent = 'Uploading\u2026'; st.style.color = ''; }
+            uploadCertificate(file, user.uid).then(function (meta) {
+                return getDb().then(function (db) {
+                    return db.collection('profiles').doc(user.email).set({ certificate: meta, uid: user.uid }, { merge: true });
+                }).then(function () {
+                    renderCertStatus({ certificate: meta });
+                    showToast('Certificate uploaded.', 4000);
+                    notifyAquatech({
+                        _subject: 'Certificate updated: ' + user.email,
+                        form_type: 'Certificate updated',
+                        email: user.email,
+                        certificate_storage_path: meta.path,
+                        firebase_uid: user.uid
+                    });
+                });
+            }).catch(function (e) {
+                console.error('Certificate update error:', e);
+                if (st) { st.textContent = 'Upload failed. Please try again.'; st.style.color = '#dc2626'; }
+                showToast('Could not upload your certificate. Try again.', 5000);
+            }).then(function () { input.value = ''; });
         }
         function doLogout() { _auth.signOut(); }
 
@@ -3032,7 +3287,9 @@
             <!-- REGISTER FORM -->
             <form id="registerForm" novalidate style="display:none;" onsubmit="event.preventDefault(); doRegister();">
                 <h2 class="text-2xl font-black text-slate-900 mb-1 pr-10">Create Account</h2>
-                <p class="text-slate-500 text-sm mb-6">Register to access your wholesale pricing.</p>
+                <p class="auth-sub text-sm mb-2">Apply for a wholesale trade account. We verify every business before pricing is unlocked.</p>
+
+                <div class="auth-section">Sign in details</div>
                 <label class="field-label" for="regEmail">Email</label>
                 <input id="regEmail" type="email" autocomplete="email" autocapitalize="off" spellcheck="false"
                     placeholder="you@company.com" class="field-input mb-4">
@@ -3041,9 +3298,36 @@
                     <input id="regPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" class="field-input">
                     <button type="button" class="pw-toggle" onclick="togglePassword('regPassword', this)" aria-pressed="false" aria-label="Show password">Show</button>
                 </div>
+
+                <div class="auth-section">Your business</div>
+                <label class="field-label" for="regCompany">Business name</label>
+                <input id="regCompany" type="text" autocomplete="organization" placeholder="Your company" class="field-input mb-4">
+                <label class="field-label" for="regContact">Your name</label>
+                <input id="regContact" type="text" autocomplete="name" placeholder="Full name" class="field-input mb-4">
+                <label class="field-label" for="regPhone">Business phone</label>
+                <input id="regPhone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" class="field-input">
+
+                <div class="auth-section">Tax verification</div>
+                <label class="field-label" for="regLicense">Sales tax ID / resale certificate number</label>
+                <input id="regLicense" type="text" autocomplete="off" placeholder="State sales tax ID or resale certificate #" class="field-input mb-4">
+                <label class="field-label" for="regCert">Resale or exemption certificate</label>
+                <label class="cert-drop" id="regCertDrop">
+                    <span class="cd-icon" aria-hidden="true">
+                        <svg class="cd-up" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        <svg class="cd-check" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    </span>
+                    <span class="cd-text">
+                        <span class="cd-title" id="regCertTitle">Upload certificate</span>
+                        <span class="cd-sub" id="regCertSub">PDF, JPG, or PNG, up to 10 MB</span>
+                    </span>
+                    <span class="cd-action" id="regCertAction" aria-hidden="true">Choose file</span>
+                    <input id="regCert" type="file" accept="application/pdf,image/jpeg,image/png" onchange="regCertChanged(this)">
+                </label>
+                <p class="auth-hint">Upload your state resale or exemption certificate, signed (New York customers: Form ST-120 or ST-120.1). We verify it before unlocking pricing.</p>
+
                 <div id="regError" class="auth-error" role="alert" style="display:none;"></div>
                 <button type="submit" id="registerBtn" class="btn btn-primary btn-block mt-5">Create Account</button>
-                <p class="text-center text-sm text-slate-500 mt-3">Have an account?
+                <p class="text-center text-sm auth-sub mt-3">Have an account?
                     <button type="button" onclick="switchToLogin()" class="auth-link">Login</button>
                 </p>
             </form>
