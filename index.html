@@ -2167,10 +2167,19 @@
             if (file.size > CERT_MAX_BYTES) return 'Certificate must be 10 MB or smaller.';
             return '';
         }
-        function uploadCertificate(file, uid) {
-            return getStorage().then(function (storage) {
+        function certFolderName(company, uid) {
+            var slug = String(company || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
+            return (slug || 'customer') + '__' + uid;
+        }
+        function uploadCertificate(file, uid, company) {
+            var companyP = company ? Promise.resolve(company) : getDb().then(function (db) {
+                var u = _auth.currentUser;
+                return u ? db.collection('profiles').doc(u.email).get().then(function (d) { return d.exists ? d.data().company : ''; }) : '';
+            }).catch(function () { return ''; });
+            return Promise.all([getStorage(), companyP]).then(function (r) {
+                var storage = r[0];
                 var safe = file.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80);
-                var path = 'resale-certificates/' + uid + '/' + Date.now() + '-' + safe;
+                var path = 'resale-certificates/' + certFolderName(r[1], uid) + '/' + Date.now() + '-' + safe;
                 return storage.ref(path).put(file, { contentType: file.type }).then(function () {
                     return { path: path, name: file.name, size: file.size, contentType: file.type, uploadedAt: new Date().toISOString() };
                 });
@@ -2664,7 +2673,7 @@
             _auth.createUserWithEmailAndPassword(email, password).then(function (cred) {
                 var uid = cred.user.uid;
                 var userEmail = (cred.user && cred.user.email) || email.toLowerCase();
-                return uploadCertificate(file, uid).then(function (meta) {
+                return uploadCertificate(file, uid, company).then(function (meta) {
                     return { meta: meta };
                 }).catch(function (e) {
                     console.error('Certificate upload error:', e);
